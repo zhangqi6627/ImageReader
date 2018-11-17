@@ -1,0 +1,185 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical">
+
+    <android.support.v7.widget.Toolbar
+        android:id="@+id/toolbar_normal"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@color/colorPrimaryDark"
+        android:visibility="gone"
+        app:logo="@mipmap/ic_launcher"
+        app:navigationIcon="@mipmap/ic_launcher"
+        app:subtitle="SubTitle"
+        app:subtitleTextColor="#ffffff"
+        app:title="Title"
+        app:titleTextColor="#ffffff">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:defaultFocusHighlightEnabled="false"
+            android:inputType="text"
+            android:text="text"
+            android:textColor="#ff0000" />
+    </android.support.v7.widget.Toolbar>
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:orientation="vertical">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:visibility="gone">
+
+                <Button
+                    android:id="@+id/btn_image1"
+                    style="@style/ButtonStyle"
+                    android:layout_width="0dp"
+                    android:layout_weight="1"
+                    android:background="@color/btn_color1"
+                    android:text="youzi4" />
+
+                <Button
+                    android:id="@+id/btn_image1_fav"
+                    style="@style/ButtonStyle"
+                    android:layout_width="0dp"
+                    android:layout_weight="1"
+                    android:background="@color/btn_color3"
+                    android:text="youzi4" />
+
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:visibility="gone">
+
+                <Button
+                    android:id="@+id/btn_image2"
+                    style="@style/ButtonStyle"
+                    android:layout_width="0dp"
+                    android:layout_weight="1"
+                    android:background="@color/btn_color3"
+                    android:text="zp2006" />
+
+                <Button
+                    android:id="@+id/btn_image2_fav"
+                    style="@style/ButtonStyle"
+                    android:layout_width="0dp"
+                    android:layout_weight="1"
+                    android:background="@color/btn_color1"
+                    android:text="zp2006" />
+
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:visibility="gone">
+
+                <Button
+                    android:id="@+id/btn_image3"
+                    style="@style/ButtonStyle"
+                    android:layout_width="0dp"
+                    android:layout_weight="1"
+                    android:background="@color/btn_color1"
+                    android:text="68771" />
+
+                <Button
+                    android:id="@+id/btn_image3_fav"
+                    style="@style/ButtonStyle"
+                    android:layout_width="0dp"
+                    android:layout_weight="1"
+                    android:background="@color/btn_color3"
+                    android:text="fav" />
+
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal">
+
+                <Button
+                    android:id="@+id/btn_image4"
+                    style="@style/ButtonStyle"
+                    android:layout_width="0dp"
+                    android:layout_weight="1"
+                    android:background="@color/btn_color3"
+                    android:text="mmjpg" />
+
+                <Button
+                    android:id="@+id/btn_image4_fav"
+                    style="@style/ButtonStyle"
+                    android:layout_width="0dp"
+                    android:layout_weight="1"
+                    android:background="@color/btn_color1"
+                    android:text="fav" />
+
+                <Button
+                    android:id="@+id/btn_image4_download"
+                    style="@style/ButtonStyle"
+                    android:layout_width="0dp"
+                    android:layout_weight="1"
+                    android:background="@color/btn_color3"
+                    android:text="fav" />
+
+            </LinearLayout>
+
+
+            <Button
+                android:id="@+id/btn_novel"
+                style="@style/ButtonStyle"
+                android:background="@color/btn_color2"
+                android:text="@string/novel" />
+
+            <Button
+                android:id="@+id/btn_tabs"
+                style="@style/ButtonStyle"
+                android:text="tabs"
+                android:visibility="gone" />
+
+            <Button
+                android:id="@+id/btn_sidemenu"
+                style="@style/ButtonStyle"
+                android:text="sidemenu"
+                android:visibility="gone" />
+
+            <Button
+                android:id="@+id/btn_login"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Login" />
+
+            <LinearLayout
+                android:id="@+id/container"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:orientation="vertical">
+
+                <com.google.android.gms.ads.AdView xmlns:ads="http://schemas.android.com/apk/res-auto"
+                    android:id="@+id/adView"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_alignParentBottom="true"
+                    android:layout_centerHorizontal="true"
+                    ads:adSize="BANNER"
+                    ads:adUnitId="ca-app-pub-5774850723915613/2813366767" />
+            </LinearLayout>
+        </LinearLayout>
+    </ScrollView>
+
+</LinearLayout>
