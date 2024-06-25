@@ -1,5 +1,4 @@
 <resources>
-    <string name="app_name">Wallpapers</string>
+    <string name="app_name">ImageReader</string>
     <string name="app_name_album">Album</string>
-
 </resources>
