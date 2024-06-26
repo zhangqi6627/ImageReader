@@ -8,6 +8,7 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.Message;
+import android.os.SystemClock;
 import android.support.annotation.NonNull;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
@@ -17,7 +18,6 @@ import android.widget.ImageView;
 import android.widget.ProgressBar;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
-import com.android.example.R;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -31,13 +31,15 @@ public class ImagesActivity extends BaseActivity {
     private ImageAdapter myAdapter;
     private ProgressBar progressBar;
     private AssetManager pluginAsset;
+    private String assetPackage;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_images);
+
         rv_image = findViewById(R.id.rv_image);
-        String packageName = getIntent().getStringExtra("packageName");
-        pluginAsset = loadPackageResource(packageName).getAssets();
+        assetPackage = getIntent().getStringExtra("packageName");
+        pluginAsset = loadPackageResource(assetPackage).getAssets();
         try {
             String[] imageFiles = pluginAsset.list("imgs");
             assert imageFiles != null;
@@ -55,11 +57,11 @@ public class ImagesActivity extends BaseActivity {
         myAdapter = new ImageAdapter(imageList);
         rv_image.setAdapter(myAdapter);
         screenWidth = getWindowManager().getDefaultDisplay().getWidth();
-        int lastPosition = loadPosition() - 1;
+        int lastPosition = loadData(assetPackage) - 1;
         if (lastPosition < 0) {
             lastPosition = 0;
         }
-        showToast("Jump to lastPosition : " + lastPosition);
+        //showToast("Jump to lastPosition : " + lastPosition);
         rv_image.scrollToPosition(lastPosition);
         //
         progressBar = findViewById(R.id.progress);
@@ -85,11 +87,7 @@ public class ImagesActivity extends BaseActivity {
             @Override
             public void run() {
                 while (isRunning) {
-                    try {
-                        Thread.sleep(8);
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    }
+                    SystemClock.sleep(8);
                     if (countTimer > 250) {
                         mHandler.sendEmptyMessage(0);
                     }
@@ -159,7 +157,7 @@ public class ImagesActivity extends BaseActivity {
                 RelativeLayout.LayoutParams layoutParams = new RelativeLayout.LayoutParams(iWidth, iHeight);
                 holder.iv_photo.setLayoutParams(layoutParams);
                 holder.iv_photo.setImageBitmap(mBitmap);
-                savePosition(position);
+                saveData(assetPackage, position);
                 progressBar.setProgress(newPosition);
             } catch (IOException e) {
                 throw new RuntimeException(e);

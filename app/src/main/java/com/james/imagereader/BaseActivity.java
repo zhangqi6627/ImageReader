@@ -1,21 +1,13 @@
 package com.james.imagereader;
 
-import static android.Manifest.permission.READ_EXTERNAL_STORAGE;
-import static android.Manifest.permission.WRITE_EXTERNAL_STORAGE;
-
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.Context;
-import android.content.DialogInterface;
-import android.content.Intent;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.content.res.AssetManager;
 import android.content.res.Resources;
-import android.os.Build;
-import android.os.Environment;
-import android.provider.Settings;
 import android.text.TextUtils;
 import android.util.Log;
 import android.widget.Toast;
@@ -30,21 +22,19 @@ public class BaseActivity extends Activity {
         Toast.makeText(this, msg, Toast.LENGTH_LONG).show();
     }
 
-    protected int loadPosition() {
-        return getSharedPreferences("record", Context.MODE_PRIVATE).getInt("position", 0);
+    protected int loadData(String key) {
+        return getSharedPreferences("records", Context.MODE_PRIVATE).getInt(key, 0);
     }
-    protected void savePosition(int position) {
-        getSharedPreferences("record", Context.MODE_PRIVATE).edit().putInt("position", position).commit();
+    protected void saveData(String key, int value) {
+        getSharedPreferences("records", Context.MODE_PRIVATE).edit().putInt(key, value).apply();
     }
 
     private AlertDialog dialog;
     protected List<String> getInstalledPackages() {
-        //getPackageManager().getInstalledApplications()
         List<String> packageList = new ArrayList<>();
         List<PackageInfo> packageInfoList = getPackageManager().getInstalledPackages(0);
-
         for (PackageInfo packageInfo : packageInfoList) {
-            if (packageInfo.packageName.contains("com.james.imagereader")) {
+            if (packageInfo.packageName.contains("com.google.imageassets")) {
                 Log.e(TAG, "packageName2:" + packageInfo.packageName);
                 packageList.add(packageInfo.packageName);
             }
@@ -56,10 +46,6 @@ public class BaseActivity extends Activity {
         String dexPath = null;
         try {
             ApplicationInfo applicationInfo = getPackageManager().getApplicationInfo(packageName, 0);
-            //check package
-            if (applicationInfo == null) {
-                return null;
-            }
             dexPath = applicationInfo.sourceDir;
         } catch (PackageManager.NameNotFoundException e) {
             e.printStackTrace();
