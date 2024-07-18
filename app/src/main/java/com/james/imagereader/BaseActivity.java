@@ -3,13 +3,18 @@ package com.james.imagereader;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.Context;
+import android.content.Intent;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.content.res.AssetManager;
 import android.content.res.Resources;
+import android.net.Uri;
+import android.os.Bundle;
+import android.support.annotation.Nullable;
 import android.text.TextUtils;
 import android.util.Log;
+import android.view.WindowManager;
 import android.widget.Toast;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
@@ -29,12 +34,18 @@ public class BaseActivity extends Activity {
         getSharedPreferences("records", Context.MODE_PRIVATE).edit().putInt(key, value).apply();
     }
 
+    @Override
+    protected void onCreate(@Nullable Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        getWindow().addFlags(WindowManager.LayoutParams.FLAG_SECURE);
+    }
+
     private AlertDialog dialog;
     protected List<String> getInstalledPackages() {
         List<String> packageList = new ArrayList<>();
         List<PackageInfo> packageInfoList = getPackageManager().getInstalledPackages(0);
         for (PackageInfo packageInfo : packageInfoList) {
-            if (packageInfo.packageName.contains("com.google.imageassets")) {
+            if (packageInfo.packageName.contains("com.golds.assets")) {
                 Log.e(TAG, "packageName2:" + packageInfo.packageName);
                 packageList.add(packageInfo.packageName);
             }
@@ -78,5 +89,11 @@ public class BaseActivity extends Activity {
         Resources pluginResources = new Resources(assets, getResources().getDisplayMetrics(), getResources().getConfiguration());
         Log.d(TAG, "loadApk: pluginResources " + pluginResources);
         return pluginResources;
+    }
+    protected void uninstall(String packageName) {
+        Intent uninstall_intent = new Intent();
+        uninstall_intent.setAction(Intent.ACTION_DELETE);//设置action为卸载已安装的包
+        uninstall_intent.setData(Uri.parse("package:" + packageName));//设置
+        startActivity(uninstall_intent);
     }
 }

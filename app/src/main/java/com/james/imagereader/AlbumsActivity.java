@@ -6,7 +6,12 @@ import android.content.Intent;
 import android.content.IntentSender;
 import android.content.pm.PackageInstaller;
 import android.content.res.Resources;
+import android.graphics.BitmapFactory;
+import android.graphics.Canvas;
+import android.graphics.drawable.BitmapDrawable;
+import android.graphics.drawable.Drawable;
 import android.media.ImageReader;
+import android.net.Uri;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.v7.widget.LinearLayoutManager;
@@ -14,6 +19,7 @@ import android.support.v7.widget.RecyclerView;
 import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
@@ -33,8 +39,6 @@ public class AlbumsActivity extends BaseActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_albums);
         rv_albums = findViewById(R.id.rv_albums);
-        albumsAdapter = new AlbumsAdapter(mContext, getInstalledPackages());
-        rv_albums.setAdapter(albumsAdapter);
         LinearLayoutManager layoutManager = new LinearLayoutManager(mContext);
         layoutManager.setOrientation(RecyclerView.VERTICAL);
         rv_albums.setLayoutManager(layoutManager);
@@ -43,7 +47,11 @@ public class AlbumsActivity extends BaseActivity {
     @Override
     protected void onResume() {
         super.onResume();
-        albumsAdapter.updateAlbums(getInstalledPackages());
+        if (albumsAdapter == null) {
+            albumsAdapter = new AlbumsAdapter(mContext, getInstalledPackages());
+        } else {
+            albumsAdapter.updateAlbums(getInstalledPackages());
+        }
         rv_albums.setAdapter(albumsAdapter);
     }
 
@@ -78,11 +86,10 @@ public class AlbumsActivity extends BaseActivity {
                 }
             });
             int progress = loadData(packageName);
-            holder.tv_progress.setText(""+progress);
-            holder.ll_content.setOnLongClickListener(new View.OnLongClickListener() {
+            holder.tv_progress.setText(String.valueOf(progress));
+            holder.tv_title.setOnLongClickListener(new View.OnLongClickListener() {
                 @Override
                 public boolean onLongClick(View v) {
-                    Log.e(TAG, "packageName : " + packageName);
                     uninstall(packageName);
                     return true;
                 }
@@ -94,13 +101,7 @@ public class AlbumsActivity extends BaseActivity {
             return mAlbums.size();
         }
     }
-    private void uninstall(String packageName) {
-        Intent intent = new Intent();
-        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-        PendingIntent sender = PendingIntent.getActivity(mContext, 0, intent, PendingIntent.FLAG_IMMUTABLE);
-        PackageInstaller mPackageInstaller = getPackageManager().getPackageInstaller();
-        mPackageInstaller.uninstall(packageName, sender.getIntentSender());// 卸载APK
-    }
+
 
     static class AlbumsHolder extends RecyclerView.ViewHolder {
         LinearLayout ll_content;

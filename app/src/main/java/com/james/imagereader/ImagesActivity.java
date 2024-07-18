@@ -38,6 +38,7 @@ public class ImagesActivity extends BaseActivity {
         setContentView(R.layout.activity_images);
 
         rv_image = findViewById(R.id.rv_image);
+        iv_cover = findViewById(R.id.iv_cover);
         assetPackage = getIntent().getStringExtra("packageName");
         pluginAsset = loadPackageResource(assetPackage).getAssets();
         try {
@@ -109,9 +110,21 @@ public class ImagesActivity extends BaseActivity {
 
     @Override
     protected void onPause() {
+        rv_image.setVisibility(View.INVISIBLE);
+        iv_cover.setVisibility(View.VISIBLE);
         super.onPause();
         stopScroll();
+
     }
+
+    @Override
+    protected void onStop() {
+        rv_image.setVisibility(View.INVISIBLE);
+        iv_cover.setVisibility(View.VISIBLE);
+        super.onStop();
+    }
+
+    private ImageView iv_cover;
 
     private final Handler mHandler = new Handler(Looper.getMainLooper()) {
         @Override
