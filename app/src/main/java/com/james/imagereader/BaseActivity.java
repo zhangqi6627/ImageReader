@@ -1,7 +1,5 @@
 package com.james.imagereader;
 
-import android.app.Activity;
-import android.app.AlertDialog;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.ApplicationInfo;
@@ -12,15 +10,20 @@ import android.content.res.Resources;
 import android.net.Uri;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
+import android.support.v7.app.AppCompatActivity;
 import android.text.TextUtils;
 import android.util.Log;
 import android.view.WindowManager;
 import android.widget.Toast;
+
+import java.io.File;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
-public class BaseActivity extends Activity {
+public class BaseActivity extends AppCompatActivity {
     private final Context mContext = BaseActivity.this;
     private final String TAG = BaseActivity.this.getClass().getName();
     protected void showToast(String msg) {
@@ -38,19 +41,6 @@ public class BaseActivity extends Activity {
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_SECURE);
-    }
-
-    private AlertDialog dialog;
-    protected List<String> getInstalledPackages() {
-        List<String> packageList = new ArrayList<>();
-        List<PackageInfo> packageInfoList = getPackageManager().getInstalledPackages(0);
-        for (PackageInfo packageInfo : packageInfoList) {
-            if (packageInfo.packageName.contains("com.golds.assets")) {
-                Log.e(TAG, "packageName2:" + packageInfo.packageName);
-                packageList.add(packageInfo.packageName);
-            }
-        }
-        return packageList;
     }
 
     protected Resources loadPackageResource(String packageName) {
@@ -74,10 +64,6 @@ public class BaseActivity extends Activity {
         }
 
         PackageInfo pluginPackageArchiveInfo = getPackageManager().getPackageArchiveInfo(dexPath, PackageManager.GET_ACTIVITIES);
-        Log.d(TAG, "loadApk: dexPath " + dexPath);
-        Log.d(TAG, "loadApk: pluginPackageArchiveInfo " + pluginPackageArchiveInfo);
-
-        //加载apk的资源
         AssetManager assets = null;
         try {
             assets = AssetManager.class.newInstance();
@@ -86,14 +72,35 @@ public class BaseActivity extends Activity {
         } catch (Exception e) {
             e.printStackTrace();
         }
-        Resources pluginResources = new Resources(assets, getResources().getDisplayMetrics(), getResources().getConfiguration());
-        Log.d(TAG, "loadApk: pluginResources " + pluginResources);
-        return pluginResources;
+        return new Resources(assets, getResources().getDisplayMetrics(), getResources().getConfiguration());
     }
     protected void uninstall(String packageName) {
         Intent uninstall_intent = new Intent();
         uninstall_intent.setAction(Intent.ACTION_DELETE);//设置action为卸载已安装的包
         uninstall_intent.setData(Uri.parse("package:" + packageName));//设置
         startActivity(uninstall_intent);
+    }
+    protected String getAssetString(String packageName, String idName) {
+        Resources mResources = loadPackageResource(packageName);
+        int strId = mResources.getIdentifier(idName, "string", packageName);
+        return mResources.getString(strId);
+    }
+    protected int getAssetInt(String packageName, String idName) {
+        Resources mResources = loadPackageResource(packageName);
+        int strId = mResources.getIdentifier(idName, "integer", packageName);
+        return mResources.getInteger(strId);
+    }
+
+    public int getStatusBarHeight(Context context) {
+        int statusHeight = -1;
+        try {
+            Class<?> clazz = Class.forName("com.android.internal.R$dimen");
+            Object object = clazz.newInstance();
+            int height = Integer.parseInt(clazz.getField("status_bar_height").get(object).toString());
+            statusHeight=context.getResources().getDimensionPixelSize(height);
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
+        return statusHeight;
     }
 }

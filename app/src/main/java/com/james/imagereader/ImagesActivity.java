@@ -12,6 +12,7 @@ import android.os.SystemClock;
 import android.support.annotation.NonNull;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
@@ -23,22 +24,36 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
 
+/**
+ * TODO: 沉浸式
+ */
 public class ImagesActivity extends BaseActivity {
     private ArrayList<String> imageList = new ArrayList<>();
     private RecyclerView rv_image;
     private int screenWidth;
     private ImageAdapter myAdapter;
-    private ProgressBar progressBar;
     private AssetManager pluginAsset;
     private String assetPackage;
+    private TextView tv_progress;
+    private ImageView iv_cover;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_images);
-
         rv_image = findViewById(R.id.rv_image);
         iv_cover = findViewById(R.id.iv_cover);
+        iv_cover.setOnLongClickListener(new View.OnLongClickListener() {
+            @Override
+            public boolean onLongClick(View v) {
+                iv_cover.setVisibility(View.GONE);
+                rv_image.setVisibility(View.VISIBLE);
+                return true;
+            }
+        });
+        tv_progress = findViewById(R.id.tv_progress);
         assetPackage = getIntent().getStringExtra("packageName");
         pluginAsset = loadPackageResource(assetPackage).getAssets();
         try {
@@ -58,16 +73,12 @@ public class ImagesActivity extends BaseActivity {
         myAdapter = new ImageAdapter(imageList);
         rv_image.setAdapter(myAdapter);
         screenWidth = getWindowManager().getDefaultDisplay().getWidth();
-        int lastPosition = loadData(assetPackage) - 1;
+        int lastPosition = loadData(assetPackage);
         if (lastPosition < 0) {
             lastPosition = 0;
         }
-        //showToast("Jump to lastPosition : " + lastPosition);
-        rv_image.scrollToPosition(lastPosition);
-        //
-        progressBar = findViewById(R.id.progress);
-        progressBar.setMax(imageList.size());
-        progressBar.setProgress(lastPosition);
+        int top = loadData(assetPackage+".top");
+        layoutManager.scrollToPositionWithOffset(lastPosition, top);
         rv_image.addOnScrollListener(new RecyclerView.OnScrollListener() {
             @Override
             public void onScrollStateChanged(@NonNull RecyclerView recyclerView, int newState) {
@@ -76,6 +87,10 @@ public class ImagesActivity extends BaseActivity {
                     mHandler.removeMessages(0);
                     countTimer = 0;
                 }
+                int itemPosition = layoutManager.findFirstVisibleItemPosition();
+                int top = Objects.requireNonNull(layoutManager.findViewByPosition(itemPosition)).getTop();
+                saveData(assetPackage, itemPosition);
+                saveData(assetPackage+".top", top);
             }
         });
     }
@@ -124,13 +139,12 @@ public class ImagesActivity extends BaseActivity {
         super.onStop();
     }
 
-    private ImageView iv_cover;
-
     private final Handler mHandler = new Handler(Looper.getMainLooper()) {
         @Override
         public void handleMessage(@NonNull Message msg) {
             super.handleMessage(msg);
             rv_image.scrollBy(scrollSpeed,scrollSpeed);
+
         }
     };
     private int scrollSpeed = 0;
@@ -152,10 +166,15 @@ public class ImagesActivity extends BaseActivity {
         }
 
         @Override
+        public void onBindViewHolder(@NonNull ImageViewHolder holder, int position, @NonNull List<Object> payloads) {
+            super.onBindViewHolder(holder, position, payloads);
+        }
+
+        @Override
         public void onBindViewHolder(@NonNull ImageViewHolder holder, final int position) {
             int newPosition = position + 1;
             String percent = decimalFormat.format((newPosition * 100 / (float)itemCount));
-            holder.tv_name.setText("P" + newPosition + " " + percent + "%");
+            tv_progress.setText(String.valueOf("P" + newPosition + "/" + itemCount + " " + percent + "%"));
             BitmapFactory.Options options = new BitmapFactory.Options();
             InputStream imageStream = null;
             Rect rect = new Rect(0, 0, 100, 100);
@@ -170,8 +189,6 @@ public class ImagesActivity extends BaseActivity {
                 RelativeLayout.LayoutParams layoutParams = new RelativeLayout.LayoutParams(iWidth, iHeight);
                 holder.iv_photo.setLayoutParams(layoutParams);
                 holder.iv_photo.setImageBitmap(mBitmap);
-                saveData(assetPackage, position);
-                progressBar.setProgress(newPosition);
             } catch (IOException e) {
                 throw new RuntimeException(e);
             } finally {
@@ -202,6 +219,20 @@ public class ImagesActivity extends BaseActivity {
                 @Override
                 public void onClick(View v) {
                     scrollSpeed = (scrollSpeed + 5) % 25;
+                }
+            });
+            iv_photo.setOnLongClickListener(new View.OnLongClickListener() {
+                @Override
+                public boolean onLongClick(View v) {
+                    /*
+                     * TODO:
+                     *  #1.卸载
+                     *  2.收藏
+                     *  3.goto
+                     *  4.分享
+                     */
+                    uninstall(assetPackage);
+                    return true;
                 }
             });
             tv_name = itemView.findViewById(R.id.tv_name);

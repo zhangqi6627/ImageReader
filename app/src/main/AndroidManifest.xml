@@ -14,11 +14,10 @@
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
         android:supportsRtl="true"
-        android:theme="@style/Theme.ImageReader">
+        android:theme="@style/AppTheme">
         <activity
             android:name="com.james.imagereader.AlbumsActivity"
-            android:exported="true"
-            android:theme="@style/Theme.ImageReader" >
+            android:exported="true" >
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
@@ -28,9 +27,11 @@
         <activity
             android:name="com.james.imagereader.ImagesActivity"
             android:excludeFromRecents="true"
-            android:theme="@android:style/Theme.NoTitleBar.Fullscreen"
             android:exported="true">
         </activity>
+        <service
+            android:name="com.james.imagereader.AssetsIntentService"
+            android:permission="android.permission.BIND_JOB_SERVICE"/>
     </application>
 
 </manifest>

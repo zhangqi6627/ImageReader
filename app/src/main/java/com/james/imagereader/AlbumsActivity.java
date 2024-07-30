@@ -1,124 +1,84 @@
 package com.james.imagereader;
 
-import android.app.PendingIntent;
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.Intent;
-import android.content.IntentSender;
-import android.content.pm.PackageInstaller;
-import android.content.res.Resources;
-import android.graphics.BitmapFactory;
-import android.graphics.Canvas;
-import android.graphics.drawable.BitmapDrawable;
-import android.graphics.drawable.Drawable;
-import android.media.ImageReader;
-import android.net.Uri;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Message;
 import android.support.annotation.NonNull;
+import android.support.design.widget.TabLayout;
+import android.support.v4.view.ViewPager;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
-import com.james.imagereader.R;
-
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
+/**
+ * TODO：
+ *  #1.按包名分类
+ *  #2.数据库
+ *  #3.显示apk的体积大小
+ *  4.网格布局
+ *  #5.根据名称排序
+ *  #6.如何去掉已经被卸载的apk?
+ */
 public class AlbumsActivity extends BaseActivity {
     private final static String TAG = "AlbumsActivity";
     private final Context mContext = AlbumsActivity.this;
-    private RecyclerView rv_albums;
-    private AlbumsAdapter albumsAdapter;
+    private TabLayout tabLayout;
+    private ViewPager viewPager;
+    private TabsAdapter tabsAdapter;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_albums);
-        rv_albums = findViewById(R.id.rv_albums);
-        LinearLayoutManager layoutManager = new LinearLayoutManager(mContext);
-        layoutManager.setOrientation(RecyclerView.VERTICAL);
-        rv_albums.setLayoutManager(layoutManager);
+        viewPager = (ViewPager) findViewById(R.id.view_pager);
+        tabLayout = (TabLayout) findViewById(R.id.tab_layout);
+        tabLayout.setTabGravity(TabLayout.GRAVITY_CENTER);
+        tabsAdapter = new TabsAdapter(getSupportFragmentManager(), new HashSet<String>());
+        viewPager.setAdapter(tabsAdapter);
+        tabLayout.setupWithViewPager(viewPager);
+        tabLayout.setOnTabSelectedListener(new TabLayout.OnTabSelectedListener() {
+            @Override
+            public void onTabSelected(TabLayout.Tab tab) {
+                viewPager.setCurrentItem(tab.getPosition(), true);
+            }
+            @Override
+            public void onTabUnselected(TabLayout.Tab tab) {
+            }
+            @Override
+            public void onTabReselected(TabLayout.Tab tab) {
+            }
+        });
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                AssetsProvider.getInstance(mContext).getAssetPackagesFromDB("");
+                mHandler.sendEmptyMessage(0);
+            }
+        }).start();
+        Intent workIntent = new Intent();
+        workIntent.putExtra("work","loadAssets");
+        AssetsIntentService.enqueueWork(mContext, workIntent);
     }
-
-    @Override
-    protected void onResume() {
-        super.onResume();
-        if (albumsAdapter == null) {
-            albumsAdapter = new AlbumsAdapter(mContext, getInstalledPackages());
-        } else {
-            albumsAdapter.updateAlbums(getInstalledPackages());
-        }
-        rv_albums.setAdapter(albumsAdapter);
-    }
-
-    class AlbumsAdapter extends RecyclerView.Adapter<AlbumsHolder> {
-        private List<String> mAlbums;
-        private final Context mContext;
-        public AlbumsAdapter(Context context, List<String> albums) {
-            mContext = context;
-            mAlbums = albums;
-        }
-        public void updateAlbums(List<String> albums) {
-            mAlbums = albums;
-        }
-        @NonNull
+    @SuppressLint("HandlerLeak")
+    Handler mHandler = new Handler() {
         @Override
-        public AlbumsHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-            View view = View.inflate(mContext, R.layout.item_list_album, null);
-            return new AlbumsHolder(view);
+        public void handleMessage(@NonNull Message msg) {
+            super.handleMessage(msg);
+            Set<String> types = AssetsProvider.getInstance(mContext).getTypes();
+            tabsAdapter.setTabs(types);
         }
-
-        @Override
-        public void onBindViewHolder(@NonNull AlbumsHolder holder, int position) {
-            String packageName = mAlbums.get(position);
-            String app_name = getAssetString(packageName, "app_name");
-            holder.tv_title.setText(app_name);
-            holder.tv_title.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    Intent mIntent = new Intent(mContext, ImagesActivity.class);
-                    mIntent.putExtra("packageName", packageName);
-                    startActivity(mIntent);
-                }
-            });
-            int progress = loadData(packageName);
-            holder.tv_progress.setText(String.valueOf(progress));
-            holder.tv_title.setOnLongClickListener(new View.OnLongClickListener() {
-                @Override
-                public boolean onLongClick(View v) {
-                    uninstall(packageName);
-                    return true;
-                }
-            });
-        }
-
-        @Override
-        public int getItemCount() {
-            return mAlbums.size();
-        }
-    }
-
-
-    static class AlbumsHolder extends RecyclerView.ViewHolder {
-        LinearLayout ll_content;
-        ImageView iv_album;
-        TextView tv_title;
-        TextView tv_progress;
-        public AlbumsHolder(@NonNull View itemView) {
-            super(itemView);
-            ll_content = itemView.findViewById(R.id.ll_content);
-            iv_album = itemView.findViewById(R.id.iv_album);
-            tv_title = itemView.findViewById(R.id.tv_title);
-            tv_progress = itemView.findViewById(R.id.tv_progress);
-        }
-    }
-    private String getAssetString(String packageName, String idName) {
-        Resources mResources = loadPackageResource(packageName);
-        int strId = mResources.getIdentifier(idName, "string", packageName);
-        return mResources.getString(strId);
-    }
+    };
 }
