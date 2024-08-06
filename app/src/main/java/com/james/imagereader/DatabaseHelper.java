@@ -40,21 +40,30 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         AssetInfo assetInfo = new AssetInfo();
         Cursor cursor = getReadableDatabase().query(TABLE_NAME, COLUMNS, COLUMN_PACKAGE_NAME + "=?", new String[]{packageName}, null, null, null, null);
         if (cursor != null && cursor.moveToFirst()) {
-            long packageSize = cursor.getLong(cursor.getColumnIndexOrThrow(COLUMN_PACKAGE_SIZE));
-            String displayName = cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_DISPLAY_NAME));
-            int imageCount = cursor.getInt(cursor.getColumnIndexOrThrow(COLUMN_IMAGE_COUNT));
-            int progress = cursor.getInt(cursor.getColumnIndexOrThrow(COLUMN_PROGRESS));
-            int offset = cursor.getInt(cursor.getColumnIndexOrThrow(COLUMN_OFFSET));
-            boolean favorite = cursor.getInt(cursor.getColumnIndexOrThrow(COLUMN_FAVORITE)) == 1;
             assetInfo.setPackageName(packageName);
+            long packageSize = cursor.getLong(cursor.getColumnIndexOrThrow(COLUMN_PACKAGE_SIZE));
             assetInfo.setPackageSize(packageSize);
+            String displayName = cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_DISPLAY_NAME));
             assetInfo.setDisplayName(displayName);
+            int imageCount = cursor.getInt(cursor.getColumnIndexOrThrow(COLUMN_IMAGE_COUNT));
             assetInfo.setImageCount(imageCount);
+            int progress = cursor.getInt(cursor.getColumnIndexOrThrow(COLUMN_PROGRESS));
             assetInfo.setProgress(progress);
+            int offset = cursor.getInt(cursor.getColumnIndexOrThrow(COLUMN_OFFSET));
             assetInfo.setOffset(offset);
+            boolean favorite = cursor.getInt(cursor.getColumnIndexOrThrow(COLUMN_FAVORITE)) == 1;
             assetInfo.setFavorite(favorite);
             cursor.close();
         }
         return assetInfo;
+    }
+    public int getTypeCount(String type) {
+        try (Cursor mCursor = getReadableDatabase().rawQuery("select count(*) from " + DatabaseHelper.TABLE_NAME + " where packageName LIKE ?;", new String[]{"%" + type + "%"})) {
+            if (mCursor != null && mCursor.moveToFirst()) {
+                mCursor.getCount();
+                return mCursor.getInt(0);
+            }
+        }
+        return 0;
     }
 }

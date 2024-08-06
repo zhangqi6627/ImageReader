@@ -20,6 +20,7 @@ import android.support.annotation.Nullable;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.CheckBox;
@@ -43,6 +44,7 @@ import java.util.Objects;
  *  4.如何判断图片是否完整？
  *  5.滚动手法能否做的更好一些
  *  6.优化滑动速度
+ *  7.左滑右滑上一章/下一章
  */
 public class ImagesActivity extends BaseActivity {
     private final ArrayList<String> imageList = new ArrayList<>();
@@ -54,12 +56,14 @@ public class ImagesActivity extends BaseActivity {
     private RelativeLayout rl_toolbar;
     private TextView tv_progress;
     private ImageView iv_cover;
+    private CheckBox cb_fav;
     private int imageCount;
     private int albumIndex;
     private int progress;
     private int offset;
     private AssetInfo assetInfo;
     private long packageSize;
+    private final DecimalFormat decimalFormat = new DecimalFormat("#0.00");
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -88,7 +92,7 @@ public class ImagesActivity extends BaseActivity {
         });
         assetInfo.setPackageSize(getPackageSize(packageName));
         // favorite
-        CheckBox cb_fav = findViewById(R.id.cb_fav);
+        cb_fav = findViewById(R.id.cb_fav);
         cb_fav.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             @Override
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
@@ -128,24 +132,29 @@ public class ImagesActivity extends BaseActivity {
                     mHandler.removeMessages(0);
                     countTimer = 0;
                 }
-                progress = layoutManager.findLastVisibleItemPosition();
-                offset = Objects.requireNonNull(layoutManager.findViewByPosition(progress)).getTop();
-                assetInfo.setProgress(progress);
-                assetInfo.setOffset(offset);
+                updateProgress();
             }
         });
         rv_image.post(new Runnable() {
             @Override
             public void run() {
-                progress = layoutManager.findLastVisibleItemPosition();
-                View lastView = layoutManager.findViewByPosition(progress);
-                if (lastView != null) {
-                    offset = lastView.getTop();
-                }
-                assetInfo.setProgress(progress);
-                assetInfo.setOffset(offset);
+                updateProgress();
             }
         });
+        int count = getDBHelper().getTypeCount("photo37");
+        Log.e("zq8888", "count:" + count);
+    }
+    private void updateProgress() {
+        progress = layoutManager.findLastVisibleItemPosition();
+        View lastView = layoutManager.findViewByPosition(progress);
+        if (lastView != null) {
+            offset = lastView.getTop();
+        }
+        assetInfo.setProgress(progress);
+        assetInfo.setOffset(offset);
+        int mProgress = progress + 1;
+        String percent = decimalFormat.format((mProgress * 100 / (float) imageCount));
+        tv_progress.setText(String.valueOf("P" + mProgress + "/" + imageCount + " " + percent + "%"));
     }
 
     @Override
@@ -212,8 +221,6 @@ public class ImagesActivity extends BaseActivity {
     private int scrollSpeed = 0;
 
     class ImageAdapter extends RecyclerView.Adapter<ImageViewHolder> {
-        private final DecimalFormat decimalFormat = new DecimalFormat("#0.00");
-
         @NonNull
         @Override
         public ImageViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
@@ -222,9 +229,6 @@ public class ImagesActivity extends BaseActivity {
 
         @Override
         public void onBindViewHolder(@NonNull ImageViewHolder holder, final int position) {
-            int newPosition = position + 1;
-            String percent = decimalFormat.format((newPosition * 100 / (float) imageCount));
-            tv_progress.setText(String.valueOf("P" + newPosition + "/" + imageCount + " " + percent + "%"));
             BitmapFactory.Options options = new BitmapFactory.Options();
             InputStream imageStream = null;
             Rect rect = new Rect(0, 0, 100, 100);
@@ -259,23 +263,12 @@ public class ImagesActivity extends BaseActivity {
     }
 
     class ImageViewHolder extends RecyclerView.ViewHolder {
-        ImageView iv_photo;
+        AssetsImageView iv_photo;
         TextView tv_name;
 
         public ImageViewHolder(@NonNull View itemView) {
             super(itemView);
             iv_photo = itemView.findViewById(R.id.iv_photo);
-            iv_photo.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    //scrollSpeed = (scrollSpeed + 5) % 15;
-                    if (rl_toolbar.getVisibility() == View.VISIBLE) {
-                        rl_toolbar.setVisibility(View.GONE);
-                    } else {
-                        rl_toolbar.setVisibility(View.VISIBLE);
-                    }
-                }
-            });
             iv_photo.setOnLongClickListener(new View.OnLongClickListener() {
                 @Override
                 public boolean onLongClick(View v) {
@@ -287,6 +280,43 @@ public class ImagesActivity extends BaseActivity {
                      *  4.分享
                      */
                     uninstall(packageName);
+                    return true;
+                }
+            });
+            iv_photo.setOnActionListener(new AssetsImageView.OnActionListener() {
+                @Override
+                public boolean onSingleClick(MotionEvent motionEvent) {
+                    if (rl_toolbar.getVisibility() == View.VISIBLE) {
+                        rl_toolbar.setVisibility(View.GONE);
+                    } else {
+                        rl_toolbar.setVisibility(View.VISIBLE);
+                    }
+                    return true;
+                }
+
+                @Override
+                public boolean onDoubleClick(MotionEvent motionEvent) {
+                    if (cb_fav != null) {
+                        boolean newChecked = !cb_fav.isChecked();
+                        cb_fav.setChecked(newChecked);
+                        if (newChecked) {
+                            showToast("收藏成功！");
+                        } else {
+                            showToast("取消收藏！");
+                        }
+                    }
+                    return true;
+                }
+
+                @Override
+                public boolean onSwipeLeft() {
+                    Log.e("zq8888", "onSwipeLeft()");
+                    return true;
+                }
+
+                @Override
+                public boolean onSwipeRight() {
+                    Log.e("zq8888", "onSwipeRight()");
                     return true;
                 }
             });

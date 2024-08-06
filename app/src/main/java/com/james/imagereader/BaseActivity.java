@@ -27,6 +27,7 @@ public class BaseActivity extends AppCompatActivity {
     private final String TAG = BaseActivity.this.getClass().getName();
 
     private Toast mToast;
+
     protected void showToast(String msg) {
         if (mToast == null) {
             mToast = Toast.makeText(mContext, msg, Toast.LENGTH_LONG);
@@ -34,6 +35,7 @@ public class BaseActivity extends AppCompatActivity {
         mToast.setText(msg);
         mToast.show();
     }
+
     protected void showDialog() {
         // TODO:
     }
@@ -110,6 +112,7 @@ public class BaseActivity extends AppCompatActivity {
         intent.setData(Uri.parse("package:" + packageName));//设置
         startActivityForResult(intent, 102);
     }
+
     protected long getPackageSize(String packageName) {
         long packageSize = 0;
         try {

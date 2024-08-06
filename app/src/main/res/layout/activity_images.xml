@@ -30,7 +30,8 @@
             android:id="@+id/cb_fav"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_alignParentLeft="true"
+            android:button="@drawable/ic_favorite"
+            android:layout_alignParentStart="true"
             android:layout_centerVertical="true" />
 
         <EditText
@@ -44,7 +45,7 @@
             android:id="@+id/btn_uninstall"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_alignParentRight="true"
+            android:layout_alignParentEnd="true"
             android:layout_centerVertical="true"
             android:layout_gravity="end"
             android:text="卸载" />

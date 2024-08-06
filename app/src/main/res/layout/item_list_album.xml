@@ -57,6 +57,7 @@
         </LinearLayout>
         <CheckBox
             android:id="@+id/cb_fav"
+            android:button="@drawable/ic_favorite"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"/>
     </com.james.imagereader.ProgressLinearLayout>

@@ -25,7 +25,7 @@ import android.widget.Toast;
 import java.util.ArrayList;
 import java.util.List;
 
-public class BaseFragment extends Fragment {
+public class AssetsFragment extends Fragment {
     private final static String TAG = "BaseFragment";
     private RecyclerView rv_albums;
     private AlbumsAdapter albumsAdapter;
@@ -65,7 +65,9 @@ public class BaseFragment extends Fragment {
             @Override
             public void run() {
                 assetInfos = AssetsProvider.getInstance(mActivity).getAssetsInfoFromDB(type);
+                AssetsProvider.getInstance(mActivity).getTabTypes().put(type, assetInfos.size());
                 mHandler.sendEmptyMessage(0);
+
             }
         }).start();
         return fragmentView;
