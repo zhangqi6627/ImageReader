@@ -1,4 +1,5 @@
 <resources>
     <string name="app_name">"ImageReader"</string>
     <string name="app_name_album">"Album"</string>
+    <string name="scan_done">Scan asset packages finished.</string>
 </resources>

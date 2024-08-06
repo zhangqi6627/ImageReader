@@ -6,40 +6,43 @@ import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentStatePagerAdapter;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Set;
 
 public class TabsAdapter extends FragmentStatePagerAdapter {
-    private Set<String> tabs;
-    private String[] tabsArray;
-    public TabsAdapter(FragmentManager fm, Set<String> tabs) {
+    private Map<String, Integer> tabTypes;
+    private String[] tabTypesArray;
+
+    public TabsAdapter(FragmentManager fm, Map<String, Integer> tabTypes) {
         super(fm);
-        setTabs(tabs);
+        setTabs(tabTypes);
     }
 
     @Override
     public Fragment getItem(int i) {
         BaseFragment baseFragment = new BaseFragment();
         Bundle bundle = new Bundle();
-        String tabType = (String) getPageTitle(i);
-        bundle.putString("type", tabType);
+        bundle.putString("type", tabTypesArray[i]);
         baseFragment.setArguments(bundle);
         return baseFragment;
     }
 
-    public void setTabs(Set<String> tabs) {
-        this.tabs = tabs;
-        tabsArray = tabs.toArray(new String[]{});
+    public void setTabs(Map<String, Integer> tabTypes) {
+        this.tabTypes = tabTypes;
+        tabTypesArray = tabTypes.keySet().toArray(new String[0]);
         notifyDataSetChanged();
     }
 
     @Override
     public int getCount() {
-        return tabs.size();
+        return tabTypesArray.length;
     }
 
     @Nullable
     @Override
     public CharSequence getPageTitle(int position) {
-        return tabsArray[position];
+        String tabType = tabTypesArray[position];
+        return tabType + "\n(" + tabTypes.get(tabType) + ")";
     }
 }

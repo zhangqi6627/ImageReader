@@ -2,25 +2,32 @@ package com.james.imagereader;
 
 import android.content.ContentValues;
 
+/*
+TODO：把AssetInfo改造成 Map形式的？
+ */
 public class AssetInfo {
     private String packageName;
     private long packageSize;
     private String displayName;
     private int progress;
-    private int images;
+    private int imageCount;
     private boolean favorite;
     private int offset;
-    public AssetInfo(String packageName, long packageSize, String displayName, int images) {
-        this.packageName = packageName;
-        this.packageSize = packageSize;
-        this.displayName = displayName;
-        this.images = images;
+    private ContentValues contentValues = new ContentValues();
+    public AssetInfo() {
     }
-    public AssetInfo(String packageName, long packageSize, String displayName, int images, boolean favorite, int progress, int offset) {
+    public AssetInfo(String packageName, long packageSize, String displayName, int imageCount) {
         this.packageName = packageName;
         this.packageSize = packageSize;
         this.displayName = displayName;
-        this.images = images;
+        this.imageCount = imageCount;
+        contentValues.put(DatabaseHelper.COLUMN_DISPLAY_NAME, "");
+    }
+    public AssetInfo(String packageName, long packageSize, String displayName, int imageCount, boolean favorite, int progress, int offset) {
+        this.packageName = packageName;
+        this.packageSize = packageSize;
+        this.displayName = displayName;
+        this.imageCount = imageCount;
         this.favorite = favorite;
         this.progress = progress;
         this.offset = offset;
@@ -58,12 +65,12 @@ public class AssetInfo {
         this.progress = progress;
     }
 
-    public int getImages() {
-        return images;
+    public int getImageCount() {
+        return imageCount;
     }
 
-    public void setImages(int images) {
-        this.images = images;
+    public void setImageCount(int imageCount) {
+        this.imageCount = imageCount;
     }
 
     public boolean isFavorite() {
@@ -87,7 +94,7 @@ public class AssetInfo {
         contentValues.put("packageName", packageName);
         contentValues.put("displayName", displayName);
         contentValues.put("packageSize", packageSize);
-        contentValues.put("imageCount", images);
+        contentValues.put("imageCount", imageCount);
         contentValues.put("progress", progress);
         contentValues.put("favorite", favorite);
         contentValues.put("offset", offset);
@@ -101,7 +108,7 @@ public class AssetInfo {
                 ", packageSize=" + packageSize +
                 ", displayName='" + displayName + '\'' +
                 ", progress=" + progress +
-                ", images=" + images +
+                ", images=" + imageCount +
                 ", favorite=" + favorite +
                 ", offset=" + offset +
                 '}';

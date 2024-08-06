@@ -1,5 +1,8 @@
 package com.james.imagereader;
 
+import android.content.Context;
+import android.content.pm.PackageInfo;
+import android.content.pm.PackageManager;
 import android.view.Window;
 
 import java.lang.reflect.Field;
@@ -45,5 +48,22 @@ public class Utils {
             }
         }
         return result;
+    }
+
+    /**
+     * 根据包名判断apk是否已安装
+     *
+     * @param context
+     * @param packageName
+     * @return true if app installed
+     */
+    public static boolean isAppInstalled(Context context, String packageName) {
+        PackageInfo packageInfo = null;
+        try {
+            packageInfo = context.getPackageManager().getPackageInfo(packageName, 0);
+        } catch (PackageManager.NameNotFoundException e) {
+            e.printStackTrace();
+        }
+        return packageInfo != null;
     }
 }

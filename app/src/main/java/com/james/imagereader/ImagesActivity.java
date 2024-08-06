@@ -1,5 +1,11 @@
 package com.james.imagereader;
 
+import android.app.Activity;
+import android.content.ContentValues;
+import android.content.Context;
+import android.content.Intent;
+import android.content.pm.ApplicationInfo;
+import android.content.pm.PackageManager;
 import android.content.res.AssetManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
@@ -10,39 +16,59 @@ import android.os.Looper;
 import android.os.Message;
 import android.os.SystemClock;
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.CheckBox;
+import android.widget.CompoundButton;
 import android.widget.ImageView;
-import android.widget.ProgressBar;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
-import java.util.List;
 import java.util.Objects;
 
 /**
  * TODO: 沉浸式
+ *  1.子线程加载assets
+ *  2.多加几种图片格式
+ *  #3.把 progress 和 offset 保存到数据库
+ *  4.如何判断图片是否完整？
+ *  5.滚动手法能否做的更好一些
+ *  6.优化滑动速度
  */
 public class ImagesActivity extends BaseActivity {
-    private ArrayList<String> imageList = new ArrayList<>();
+    private final ArrayList<String> imageList = new ArrayList<>();
     private RecyclerView rv_image;
     private int screenWidth;
-    private ImageAdapter myAdapter;
+    private LinearLayoutManager layoutManager;
     private AssetManager pluginAsset;
-    private String assetPackage;
+    private String packageName;
+    private RelativeLayout rl_toolbar;
     private TextView tv_progress;
     private ImageView iv_cover;
+    private int imageCount;
+    private int albumIndex;
+    private int progress;
+    private int offset;
+    private AssetInfo assetInfo;
+    private long packageSize;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        packageName = getIntent().getStringExtra("packageName");
+        assetInfo = getDBHelper().getAssetInfo(packageName);
+        albumIndex = getIntent().getIntExtra("albumIndex", 0);
         setContentView(R.layout.activity_images);
+        rl_toolbar = findViewById(R.id.rl_toolbar);
         rv_image = findViewById(R.id.rv_image);
         iv_cover = findViewById(R.id.iv_cover);
         iv_cover.setOnLongClickListener(new View.OnLongClickListener() {
@@ -53,9 +79,26 @@ public class ImagesActivity extends BaseActivity {
                 return true;
             }
         });
+        // 卸载
+        findViewById(R.id.btn_uninstall).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                uninstall(packageName);
+            }
+        });
+        assetInfo.setPackageSize(getPackageSize(packageName));
+        // favorite
+        CheckBox cb_fav = findViewById(R.id.cb_fav);
+        cb_fav.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                assetInfo.setFavorite(isChecked);
+            }
+        });
+        cb_fav.setChecked(assetInfo.isFavorite());
+        // progress
         tv_progress = findViewById(R.id.tv_progress);
-        assetPackage = getIntent().getStringExtra("packageName");
-        pluginAsset = loadPackageResource(assetPackage).getAssets();
+        pluginAsset = loadPackageResource(packageName).getAssets();
         try {
             String[] imageFiles = pluginAsset.list("imgs");
             assert imageFiles != null;
@@ -65,20 +108,18 @@ public class ImagesActivity extends BaseActivity {
                 }
             }
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            e.printStackTrace();
         }
-        LinearLayoutManager layoutManager = new LinearLayoutManager(ImagesActivity.this);
+        imageCount = imageList.size();
+        assetInfo.setImageCount(imageCount);
+        layoutManager = new LinearLayoutManager(mContext);
         layoutManager.setOrientation(RecyclerView.VERTICAL);
         rv_image.setLayoutManager(layoutManager);
-        myAdapter = new ImageAdapter(imageList);
-        rv_image.setAdapter(myAdapter);
+        rv_image.setAdapter(new ImageAdapter());
         screenWidth = getWindowManager().getDefaultDisplay().getWidth();
-        int lastPosition = loadData(assetPackage);
-        if (lastPosition < 0) {
-            lastPosition = 0;
-        }
-        int top = loadData(assetPackage+".top");
-        layoutManager.scrollToPositionWithOffset(lastPosition, top);
+        progress = assetInfo.getProgress();
+        offset = assetInfo.getOffset();
+        layoutManager.scrollToPositionWithOffset(progress, offset);
         rv_image.addOnScrollListener(new RecyclerView.OnScrollListener() {
             @Override
             public void onScrollStateChanged(@NonNull RecyclerView recyclerView, int newState) {
@@ -87,17 +128,39 @@ public class ImagesActivity extends BaseActivity {
                     mHandler.removeMessages(0);
                     countTimer = 0;
                 }
-                int itemPosition = layoutManager.findFirstVisibleItemPosition();
-                int top = Objects.requireNonNull(layoutManager.findViewByPosition(itemPosition)).getTop();
-                saveData(assetPackage, itemPosition);
-                saveData(assetPackage+".top", top);
+                progress = layoutManager.findLastVisibleItemPosition();
+                offset = Objects.requireNonNull(layoutManager.findViewByPosition(progress)).getTop();
+                assetInfo.setProgress(progress);
+                assetInfo.setOffset(offset);
+            }
+        });
+        rv_image.post(new Runnable() {
+            @Override
+            public void run() {
+                progress = layoutManager.findLastVisibleItemPosition();
+                View lastView = layoutManager.findViewByPosition(progress);
+                if (lastView != null) {
+                    offset = lastView.getTop();
+                }
+                assetInfo.setProgress(progress);
+                assetInfo.setOffset(offset);
             }
         });
     }
 
+    @Override
+    public void onBackPressed() {
+        getDBHelper().updateAssetInfo(assetInfo);
+        Intent intent = new Intent();
+        intent.putExtra("albumIndex", albumIndex);
+        setResult(Activity.RESULT_OK, intent);
+        super.onBackPressed();
+    }
+
     private int countTimer = 0;
     private boolean isRunning = true;
-    private void startScroll(){
+
+    private void startScroll() {
         isRunning = true;
         new Thread(new Runnable() {
             @Override
@@ -112,7 +175,8 @@ public class ImagesActivity extends BaseActivity {
             }
         }).start();
     }
-    private void stopScroll(){
+
+    private void stopScroll() {
         isRunning = false;
         countTimer = 0;
     }
@@ -129,7 +193,6 @@ public class ImagesActivity extends BaseActivity {
         iv_cover.setVisibility(View.VISIBLE);
         super.onPause();
         stopScroll();
-
     }
 
     @Override
@@ -143,38 +206,25 @@ public class ImagesActivity extends BaseActivity {
         @Override
         public void handleMessage(@NonNull Message msg) {
             super.handleMessage(msg);
-            rv_image.scrollBy(scrollSpeed,scrollSpeed);
-
+            rv_image.scrollBy(scrollSpeed, scrollSpeed);
         }
     };
     private int scrollSpeed = 0;
 
     class ImageAdapter extends RecyclerView.Adapter<ImageViewHolder> {
-        private ArrayList<String> imageList;
         private final DecimalFormat decimalFormat = new DecimalFormat("#0.00");
-        private int itemCount = 0;
-        public ImageAdapter(ArrayList<String> imageList) {
-            this.imageList = imageList;
-            itemCount = imageList.size();
-        }
 
         @NonNull
         @Override
         public ImageViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-            View view = View.inflate(ImagesActivity.this, R.layout.item_list_image, null);
-            return new ImageViewHolder(view);
-        }
-
-        @Override
-        public void onBindViewHolder(@NonNull ImageViewHolder holder, int position, @NonNull List<Object> payloads) {
-            super.onBindViewHolder(holder, position, payloads);
+            return new ImageViewHolder(View.inflate(mContext, R.layout.item_list_image, null));
         }
 
         @Override
         public void onBindViewHolder(@NonNull ImageViewHolder holder, final int position) {
             int newPosition = position + 1;
-            String percent = decimalFormat.format((newPosition * 100 / (float)itemCount));
-            tv_progress.setText(String.valueOf("P" + newPosition + "/" + itemCount + " " + percent + "%"));
+            String percent = decimalFormat.format((newPosition * 100 / (float) imageCount));
+            tv_progress.setText(String.valueOf("P" + newPosition + "/" + imageCount + " " + percent + "%"));
             BitmapFactory.Options options = new BitmapFactory.Options();
             InputStream imageStream = null;
             Rect rect = new Rect(0, 0, 100, 100);
@@ -204,7 +254,7 @@ public class ImagesActivity extends BaseActivity {
 
         @Override
         public int getItemCount() {
-            return itemCount;
+            return imageCount;
         }
     }
 
@@ -218,7 +268,12 @@ public class ImagesActivity extends BaseActivity {
             iv_photo.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
-                    scrollSpeed = (scrollSpeed + 5) % 25;
+                    //scrollSpeed = (scrollSpeed + 5) % 15;
+                    if (rl_toolbar.getVisibility() == View.VISIBLE) {
+                        rl_toolbar.setVisibility(View.GONE);
+                    } else {
+                        rl_toolbar.setVisibility(View.VISIBLE);
+                    }
                 }
             });
             iv_photo.setOnLongClickListener(new View.OnLongClickListener() {
@@ -227,15 +282,31 @@ public class ImagesActivity extends BaseActivity {
                     /*
                      * TODO:
                      *  #1.卸载
-                     *  2.收藏
+                     *  2.保存
                      *  3.goto
                      *  4.分享
                      */
-                    uninstall(assetPackage);
+                    uninstall(packageName);
                     return true;
                 }
             });
             tv_name = itemView.findViewById(R.id.tv_name);
+        }
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        Log.e("zq8888", "onActivityResult(1)" + requestCode + " result:" + resultCode + " data:" + data);
+        if (requestCode == 102) {
+            if (!Utils.isAppInstalled(this, packageName)) {
+                showToast("卸载完成");
+                Intent intent = new Intent();
+                intent.putExtra("albumIndex", albumIndex);
+                intent.putExtra("uninstalled", true);
+                setResult(Activity.RESULT_OK, intent);
+                finish();
+            }
         }
     }
 }

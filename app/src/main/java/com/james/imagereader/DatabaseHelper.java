@@ -1,28 +1,60 @@
 package com.james.imagereader;
 
 import android.content.Context;
+import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
-import android.support.annotation.Nullable;
 
 public class DatabaseHelper extends SQLiteOpenHelper {
-    public final static String TABLE_NAME = "albums";
-    private Context mContext;
+    public final static String DATABASE_NAME = "AssetsInfo.db";
+    public final static String TABLE_NAME = "assets";
+
     public DatabaseHelper(Context context) {
-        super(context, "assets", null, 1);
-        mContext = context;
+        super(context, DATABASE_NAME, null, 1);
     }
-    public DatabaseHelper(@Nullable Context context, @Nullable String name, @Nullable SQLiteDatabase.CursorFactory factory, int version) {
-        super(context, name, factory, version);
-    }
+
+    public final static String COLUMN_ID = "id";
+    public final static String COLUMN_PACKAGE_NAME = "packageName";
+    public final static String COLUMN_PACKAGE_SIZE = "packageSize";
+    public final static String COLUMN_DISPLAY_NAME = "displayName";
+    public final static String COLUMN_IMAGE_COUNT = "imageCount";
+    public final static String COLUMN_PROGRESS = "progress";
+    public final static String COLUMN_OFFSET = "offset";
+    public final static String COLUMN_FAVORITE = "favorite";
+    public final static String[] COLUMNS = new String[]{COLUMN_PACKAGE_NAME, COLUMN_PACKAGE_SIZE, COLUMN_DISPLAY_NAME, COLUMN_IMAGE_COUNT, COLUMN_PROGRESS, COLUMN_OFFSET, COLUMN_FAVORITE};
 
     @Override
     public void onCreate(SQLiteDatabase db) {
-        db.execSQL("create table if not exists albums(id INTEGER PRIMARY KEY AUTOINCREMENT, packageName varchar(80) unique, displayName varchar(120), packageSize varchar(10), imageCount integer, progress integer, offset integer, favorite boolean);");
+        db.execSQL("create table if not exists " + TABLE_NAME + "(id INTEGER PRIMARY KEY AUTOINCREMENT, packageName varchar(80) unique, displayName varchar(120), packageSize long, imageCount integer, progress integer, offset integer, favorite boolean);");
     }
 
     @Override
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
+    }
 
+    public void updateAssetInfo(AssetInfo assetInfo) {
+        getWritableDatabase().update(DatabaseHelper.TABLE_NAME, assetInfo.getContentValues(), COLUMN_PACKAGE_NAME + "=?", new String[]{assetInfo.getPackageName()});
+    }
+
+    public AssetInfo getAssetInfo(String packageName) {
+        AssetInfo assetInfo = new AssetInfo();
+        Cursor cursor = getReadableDatabase().query(TABLE_NAME, COLUMNS, COLUMN_PACKAGE_NAME + "=?", new String[]{packageName}, null, null, null, null);
+        if (cursor != null && cursor.moveToFirst()) {
+            long packageSize = cursor.getLong(cursor.getColumnIndexOrThrow(COLUMN_PACKAGE_SIZE));
+            String displayName = cursor.getString(cursor.getColumnIndexOrThrow(COLUMN_DISPLAY_NAME));
+            int imageCount = cursor.getInt(cursor.getColumnIndexOrThrow(COLUMN_IMAGE_COUNT));
+            int progress = cursor.getInt(cursor.getColumnIndexOrThrow(COLUMN_PROGRESS));
+            int offset = cursor.getInt(cursor.getColumnIndexOrThrow(COLUMN_OFFSET));
+            boolean favorite = cursor.getInt(cursor.getColumnIndexOrThrow(COLUMN_FAVORITE)) == 1;
+            assetInfo.setPackageName(packageName);
+            assetInfo.setPackageSize(packageSize);
+            assetInfo.setDisplayName(displayName);
+            assetInfo.setImageCount(imageCount);
+            assetInfo.setProgress(progress);
+            assetInfo.setOffset(offset);
+            assetInfo.setFavorite(favorite);
+            cursor.close();
+        }
+        return assetInfo;
     }
 }

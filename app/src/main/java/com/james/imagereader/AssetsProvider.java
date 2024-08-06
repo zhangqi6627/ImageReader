@@ -7,6 +7,7 @@ import android.content.pm.PackageManager;
 import android.content.res.AssetManager;
 import android.content.res.Resources;
 import android.database.Cursor;
+import android.database.sqlite.SQLiteDatabase;
 import android.text.TextUtils;
 import android.util.Log;
 
@@ -14,75 +15,79 @@ import java.io.File;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 public class AssetsProvider {
     public final static String TAG = "AssetsProvider";
-    private Context mContext;
+    private final Context mContext;
     private static AssetsProvider assetsProvider;
-    private DatabaseHelper mDatabaseHelper;
+    private final DatabaseHelper mDatabaseHelper;
+
     private AssetsProvider(Context context) {
         mContext = context;
         mDatabaseHelper = new DatabaseHelper(mContext);
     }
+
     public static AssetsProvider getInstance(Context context) {
         if (assetsProvider == null) {
             assetsProvider = new AssetsProvider(context);
         }
-        return  assetsProvider;
+        return assetsProvider;
     }
-    public List<AssetInfo> getAssetPackages(String type) {
+
+    public List<AssetInfo> getAssetsInfoFromApk(String type) {
         List<PackageInfo> packageInfoList = mContext.getPackageManager().getInstalledPackages(0);
         List<AssetInfo> assetInfos = new ArrayList<>();
-        types = new HashSet<>();
-        //mDatabaseHelper.getWritableDatabase().beginTransaction();
+        tabTypes = new HashMap<>();
+        SQLiteDatabase mDatabase = mDatabaseHelper.getWritableDatabase();
         for (PackageInfo packageInfo : packageInfoList) {
             if (packageInfo.packageName.contains("com.golds.assets." + type)) {
                 String pkgName = packageInfo.packageName;
                 long pkgSize = new File(packageInfo.applicationInfo.sourceDir).length();
                 String displayName = getAssetString(pkgName, "app_name");
+                if ("0".equalsIgnoreCase(displayName)) {
+                    continue;
+                }
                 int imageCount = Integer.parseInt(getAssetString(pkgName, "image_count"));
                 AssetInfo assetInfo = new AssetInfo(pkgName, pkgSize, displayName, imageCount);
                 assetInfos.add(assetInfo);
-                String tabType = pkgName.split("\\.")[3];
-                types.add(tabType);
-                mDatabaseHelper.getWritableDatabase().insert(DatabaseHelper.TABLE_NAME, null, assetInfo.getContentValues());
+                tabTypes.put(pkgName.split("\\.")[3], 0);
+                mDatabase.insert(DatabaseHelper.TABLE_NAME, null, assetInfo.getContentValues());
             }
         }
-        //mDatabaseHelper.getWritableDatabase().endTransaction();
         return assetInfos;
     }
-    public Set<String> getTypes() {
-        return types;
+
+    public Map<String, Integer> getTabTypes() {
+        return tabTypes;
     }
-    private Set<String> types = new HashSet<>();
-    public List<AssetInfo> getAssetPackagesFromDB(String type) {
+
+    private Map<String, Integer> tabTypes = new HashMap<>();
+
+    public List<AssetInfo> getAssetsInfoFromDB(String type) {
         List<PackageInfo> packageInfoList = mContext.getPackageManager().getInstalledPackages(0);
         List<AssetInfo> assetInfos = new ArrayList<>();
-        types = new HashSet<>();
-        Log.e("zq8888", "type1: " + type);
-        String selection = "packageName LIKE ?";
-        String[] selectionArgs = new String[] { "%" + type + "%" };
+        tabTypes = new HashMap<>();
+        String selection = DatabaseHelper.COLUMN_PACKAGE_NAME + " LIKE ?";
+        String[] selectionArgs = new String[]{"%" + type + "%"};
         if (TextUtils.isEmpty(type)) {
             selection = null;
             selectionArgs = null;
         }
-        Cursor mCursor = mDatabaseHelper.getReadableDatabase().query(DatabaseHelper.TABLE_NAME, new String[]{"packageName", "displayName", "progress", "offset", "favorite", "imageCount", "packageSize"}, selection, selectionArgs, null, null, "displayName");
+        Cursor mCursor = mDatabaseHelper.getReadableDatabase().query(DatabaseHelper.TABLE_NAME, DatabaseHelper.COLUMNS, selection, selectionArgs, null, null, DatabaseHelper.COLUMN_DISPLAY_NAME);
         if (mCursor != null && mCursor.moveToFirst()) {
             do {
-                String packageName = mCursor.getString(mCursor.getColumnIndexOrThrow("packageName"));
+                String packageName = mCursor.getString(mCursor.getColumnIndexOrThrow(DatabaseHelper.COLUMN_PACKAGE_NAME));
                 String mType = packageName.split("\\.")[3];
-                types.add(mType);
-                if (packageName.contains("com.golds.assets." + type)) {
-                    String displayName = mCursor.getString(mCursor.getColumnIndexOrThrow("displayName"));
-                    long packageSize = mCursor.getLong(mCursor.getColumnIndexOrThrow("packageSize"));
-                    int progress = mCursor.getInt(mCursor.getColumnIndexOrThrow("progress"));
-                    int offset = mCursor.getInt(mCursor.getColumnIndexOrThrow("offset"));
-                    int imageCount = mCursor.getInt(mCursor.getColumnIndexOrThrow("imageCount"));
-                    int favorite = mCursor.getInt(mCursor.getColumnIndexOrThrow("favorite"));
+                tabTypes.put(mType, 0);
+                if (packageName.contains("com.golds.assets." + type + ".")) {
+                    String displayName = mCursor.getString(mCursor.getColumnIndexOrThrow(DatabaseHelper.COLUMN_DISPLAY_NAME));
+                    long packageSize = mCursor.getLong(mCursor.getColumnIndexOrThrow(DatabaseHelper.COLUMN_PACKAGE_SIZE));
+                    int progress = mCursor.getInt(mCursor.getColumnIndexOrThrow(DatabaseHelper.COLUMN_PROGRESS));
+                    int offset = mCursor.getInt(mCursor.getColumnIndexOrThrow(DatabaseHelper.COLUMN_OFFSET));
+                    int imageCount = mCursor.getInt(mCursor.getColumnIndexOrThrow(DatabaseHelper.COLUMN_IMAGE_COUNT));
+                    int favorite = mCursor.getInt(mCursor.getColumnIndexOrThrow(DatabaseHelper.COLUMN_FAVORITE));
                     AssetInfo assetInfo = new AssetInfo(packageName, packageSize, displayName, imageCount, favorite == 1, progress, offset);
                     Log.e(TAG, "mType: " + mType + " assetInfo: " + assetInfo);
                     assetInfos.add(assetInfo);
@@ -90,18 +95,39 @@ public class AssetsProvider {
             } while (mCursor.moveToNext());
             mCursor.close();
         }
+        if (!TextUtils.isEmpty(type)) {
+            tabTypes.put(type, assetInfos.size());
+        }
         return assetInfos;
     }
+
+    public void deleteItemIfNotExist() {
+        Cursor cursor = mDatabaseHelper.getReadableDatabase().query(DatabaseHelper.TABLE_NAME, new String[]{"packageName"}, null, null, null, null, null);
+        if (cursor != null && cursor.moveToFirst()) {
+            do {
+                String packageName = cursor.getString(cursor.getColumnIndexOrThrow("packageName"));
+                if (!Utils.isAppInstalled(mContext, packageName)) {
+                    mDatabaseHelper.getWritableDatabase().delete(DatabaseHelper.TABLE_NAME, "packageName=?", new String[]{packageName});
+                }
+            } while (cursor.moveToNext());
+        }
+    }
+
     protected String getAssetString(String packageName, String idName) {
         Resources mResources = loadPackageResource(packageName);
+        if (mResources == null) {
+            return "0";
+        }
         int strId = mResources.getIdentifier(idName, "string", packageName);
         return mResources.getString(strId);
     }
+
     protected int getAssetInt(String packageName, String idName) {
         Resources mResources = loadPackageResource(packageName);
         int strId = mResources.getIdentifier(idName, "integer", packageName);
         return mResources.getInteger(strId);
     }
+
     protected Resources loadPackageResource(String packageName) {
         String dexPath = null;
         try {
