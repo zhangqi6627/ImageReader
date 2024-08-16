@@ -66,4 +66,7 @@ public class Utils {
         }
         return packageInfo != null;
     }
+    public static boolean isAppExists(String apkPath) {
+        return false;
+    }
 }

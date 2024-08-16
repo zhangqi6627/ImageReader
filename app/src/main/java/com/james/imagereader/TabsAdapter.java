@@ -33,10 +33,6 @@ public class TabsAdapter extends FragmentStatePagerAdapter {
     public void setTabs(Map<String, Integer> tabTypes) {
         this.tabTypes = tabTypes;
         tabTypesArray = tabTypes.keySet().toArray(new String[0]);
-        for (String tabType : tabTypesArray) {
-            int tabTypeCount = ((BaseActivity)mContext).getDBHelper().getTypeCount(tabType);
-            tabTypes.put(tabType, tabTypeCount);
-        }
         notifyDataSetChanged();
     }
 
@@ -49,8 +45,6 @@ public class TabsAdapter extends FragmentStatePagerAdapter {
     @Override
     public CharSequence getPageTitle(int position) {
         String tabType = tabTypesArray[position];
-
-        Log.e("zq8888", "nums: " + tabTypes.get(tabType));
         return tabType + "\n(" + tabTypes.get(tabType) + ")";
     }
 }

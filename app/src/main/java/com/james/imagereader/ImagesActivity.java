@@ -7,10 +7,12 @@ import android.content.Intent;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
 import android.content.res.AssetManager;
+import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Rect;
 import android.os.Bundle;
+import android.os.Environment;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.Message;
@@ -52,6 +54,7 @@ public class ImagesActivity extends BaseActivity {
     private int screenWidth;
     private LinearLayoutManager layoutManager;
     private AssetManager pluginAsset;
+    private Resources pluginResources;
     private String packageName;
     private RelativeLayout rl_toolbar;
     private TextView tv_progress;
@@ -71,6 +74,8 @@ public class ImagesActivity extends BaseActivity {
         packageName = getIntent().getStringExtra("packageName");
         assetInfo = getDBHelper().getAssetInfo(packageName);
         albumIndex = getIntent().getIntExtra("albumIndex", 0);
+        String apkPath = Environment.getExternalStorageDirectory().getPath() + "/ImageReader/" + assetInfo.getDisplayName();
+
         setContentView(R.layout.activity_images);
         rl_toolbar = findViewById(R.id.rl_toolbar);
         rv_image = findViewById(R.id.rv_image);
@@ -90,7 +95,7 @@ public class ImagesActivity extends BaseActivity {
                 uninstall(packageName);
             }
         });
-        assetInfo.setPackageSize(getPackageSize(packageName));
+        assetInfo.setPackageSize(new File(apkPath).length());
         // favorite
         cb_fav = findViewById(R.id.cb_fav);
         cb_fav.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
@@ -102,7 +107,7 @@ public class ImagesActivity extends BaseActivity {
         cb_fav.setChecked(assetInfo.isFavorite());
         // progress
         tv_progress = findViewById(R.id.tv_progress);
-        pluginAsset = loadPackageResource(packageName).getAssets();
+        pluginAsset = getPluginAssets(apkPath);
         try {
             String[] imageFiles = pluginAsset.list("imgs");
             assert imageFiles != null;
@@ -114,6 +119,7 @@ public class ImagesActivity extends BaseActivity {
         } catch (IOException e) {
             e.printStackTrace();
         }
+        String appName = getAssetString(apkPath, "app_name");
         imageCount = imageList.size();
         assetInfo.setImageCount(imageCount);
         layoutManager = new LinearLayoutManager(mContext);
@@ -141,9 +147,8 @@ public class ImagesActivity extends BaseActivity {
                 updateProgress();
             }
         });
-        int count = getDBHelper().getTypeCount("photo37");
-        Log.e("zq8888", "count:" + count);
     }
+
     private void updateProgress() {
         progress = layoutManager.findLastVisibleItemPosition();
         View lastView = layoutManager.findViewByPosition(progress);

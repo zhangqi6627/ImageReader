@@ -17,14 +17,14 @@ public class AssetsIntentService extends JobIntentService {
 
     @Override
     protected void onHandleWork(@NonNull Intent intent) {
-        long timeBegin = System.currentTimeMillis();
-        AssetsProvider.getInstance(AssetsIntentService.this).getAssetsInfoFromApk();
-        long timeSecond = System.currentTimeMillis();
-        mHandler.sendMessage(mHandler.obtainMessage(0, (int) ((timeSecond - timeBegin) / 1000), 0));
-        // 扫描数据库中的记录，如果应用不存在就删除记录，并且更新RecyclerView
-        AssetsProvider.getInstance(AssetsIntentService.this).deleteItemIfNotExist();
-        long timeEnd = System.currentTimeMillis();
-        mHandler.sendMessage(mHandler.obtainMessage(1, (int) ((timeEnd - timeSecond) / 1000), 0));
+//        long timeBegin = System.currentTimeMillis();
+//        AssetsProvider.getInstance(AssetsIntentService.this).getAssetsInfoFromApk();
+//        long timeSecond = System.currentTimeMillis();
+//        mHandler.sendMessage(mHandler.obtainMessage(0, (int) ((timeSecond - timeBegin) / 1000), 0));
+//        // 扫描数据库中的记录，如果应用不存在就删除记录，并且更新RecyclerView
+//        AssetsProvider.getInstance(AssetsIntentService.this).deleteItemIfNotExist();
+//        long timeEnd = System.currentTimeMillis();
+//        mHandler.sendMessage(mHandler.obtainMessage(1, (int) ((timeEnd - timeSecond) / 1000), 0));
     }
 
     Handler mHandler = new Handler() {

@@ -7,12 +7,14 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
+import android.os.SystemClock;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
 import android.support.v7.widget.DividerItemDecoration;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -65,12 +67,29 @@ public class AssetsFragment extends Fragment {
             @Override
             public void run() {
                 assetInfos = AssetsProvider.getInstance(mActivity).getAssetsInfoFromDB(type);
-                AssetsProvider.getInstance(mActivity).getTabTypes().put(type, assetInfos.size());
+                //AssetsProvider.getInstance(mActivity).getTabTypes().put(type, assetInfos.size());
                 mHandler.sendEmptyMessage(0);
-
             }
         }).start();
         return fragmentView;
+    }
+
+    private void scanAssetsInfo() {
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                SystemClock.sleep(2000);
+                long timeBegin = System.currentTimeMillis();
+                AssetsProvider.getInstance(mActivity).getAssetsInfoFromStorage();
+                long timeSecond = System.currentTimeMillis();
+                mHandler.sendMessage(mHandler.obtainMessage(1, (int) ((timeSecond - timeBegin) / 1000), 0));
+                // 扫描数据库中的记录，如果应用不存在就删除记录，并且更新RecyclerView
+                //AssetsProvider.getInstance(mContext).deleteItemIfNotExist();
+                AssetsProvider.getInstance(mActivity).getAssetsInfoFromDB("");
+                long timeEnd = System.currentTimeMillis();
+                mHandler.sendMessage(mHandler.obtainMessage(2, (int) ((timeEnd - timeSecond) / 1000), 0));
+            }
+        }).start();
     }
 
     @SuppressLint("HandlerLeak")
@@ -78,10 +97,20 @@ public class AssetsFragment extends Fragment {
         @Override
         public void handleMessage(@NonNull Message msg) {
             super.handleMessage(msg);
-            albumsAdapter.notifyDataSetChanged();
-            int position = mActivity.loadData(type + ".position");
-            int offset = mActivity.loadData(type + ".offset");
-            layoutManager.scrollToPositionWithOffset(position, offset);
+            switch (msg.what) {
+                case 0:
+                    albumsAdapter.notifyDataSetChanged();
+                    int position = mActivity.loadData(type + ".position");
+                    int offset = mActivity.loadData(type + ".offset");
+                    layoutManager.scrollToPositionWithOffset(position, offset);
+                    break;
+                case 1:
+
+                    break;
+                case 2:
+                    break;
+            }
+
         }
     };
 
@@ -116,16 +145,18 @@ public class AssetsFragment extends Fragment {
         public void onBindViewHolder(@NonNull AlbumsHolder holder, int position) {
             AssetInfo assetInfo = assetInfos.get(position);
             String packageName = assetInfo.getPackageName();
-            String displayName = assetInfo.getDisplayName();
+            String displayName = assetInfo.getDisplayName().replace(".apk", "");
             holder.tv_title.setText(displayName);
             holder.rootLayout.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
-                    if (!Utils.isAppInstalled(mActivity, packageName)) {
-                        Toast.makeText(mActivity, "App not installed or has been uninstalled.", Toast.LENGTH_LONG).show();
-                        return;
-                    }
+//                    if (!Utils.isAppInstalled(mActivity, packageName)) {
+//                        Toast.makeText(mActivity, "App not installed or has been uninstalled.", Toast.LENGTH_LONG).show();
+//                        return;
+//                    }
+
                     Intent mIntent = new Intent(mActivity, ImagesActivity.class);
+                    mIntent.putExtra("displayName", displayName);
                     mIntent.putExtra("packageName", packageName);
                     mIntent.putExtra("albumIndex", position);
                     startActivityForResult(mIntent, REQUEST_VIEW_IMAGE);
@@ -134,7 +165,8 @@ public class AssetsFragment extends Fragment {
             holder.rootLayout.setOnLongClickListener(new View.OnLongClickListener() {
                 @Override
                 public boolean onLongClick(View v) {
-                    mActivity.uninstall(packageName);
+                    //mActivity.uninstall(packageName);
+                    //scanAssetsInfo();
                     return true;
                 }
             });

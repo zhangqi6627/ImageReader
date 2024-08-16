@@ -1,12 +1,19 @@
 package com.james.imagereader;
 
-import android.content.Intent;
+import android.Manifest;
 import android.os.Bundle;
+import android.os.Environment;
 import android.os.Message;
+import android.os.SystemClock;
 import android.support.design.widget.TabLayout;
+import android.support.v4.app.ActivityCompat;
 import android.support.v4.view.ViewPager;
+import android.util.Log;
 
+import java.io.File;
 import java.util.HashMap;
+import java.util.List;
+import java.util.Objects;
 
 /**
  * TODO：
@@ -44,6 +51,10 @@ public class AssetsActivity extends BaseActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_albums);
+
+        ActivityCompat.requestPermissions(this,
+                new String[]{Manifest.permission.MANAGE_EXTERNAL_STORAGE, Manifest.permission.WRITE_EXTERNAL_STORAGE}, 3);
+
         viewPager = (ViewPager) findViewById(R.id.view_pager);
         TabLayout tabLayout = (TabLayout) findViewById(R.id.tab_layout);
         tabLayout.setTabGravity(TabLayout.GRAVITY_CENTER);
@@ -64,27 +75,38 @@ public class AssetsActivity extends BaseActivity {
             public void onTabReselected(TabLayout.Tab tab) {
             }
         });
+    }
+
+    @Override
+    protected void onPermissionGranted() {
+        super.onPermissionGranted();
         runOnUiThread(new Runnable() {
             @Override
             public void run() {
-                AssetsProvider.getInstance(mContext).getAssetsInfoFromDB("");
-                mHandler.sendEmptyMessage(0);
+                List<AssetInfo> assetInfos = AssetsProvider.getInstance(AssetsActivity.this).getAssetsInfoFromDB("");
+                mHandler.sendEmptyMessageDelayed(0, 0);
             }
         });
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                long timeBegin = System.currentTimeMillis();
-                AssetsProvider.getInstance(mContext).getAssetsInfoFromApk();
-                long timeSecond = System.currentTimeMillis();
-                mHandler.sendMessage(mHandler.obtainMessage(1, (int) ((timeSecond - timeBegin) / 1000), 0));
-                // 扫描数据库中的记录，如果应用不存在就删除记录，并且更新RecyclerView
-                AssetsProvider.getInstance(mContext).deleteItemIfNotExist();
-                long timeEnd = System.currentTimeMillis();
-                mHandler.sendMessage(mHandler.obtainMessage(2, (int) ((timeEnd - timeSecond) / 1000), 0));
-            }
-        }).start();
-        //AssetsIntentService.enqueueWork(mContext, new Intent());
+        int savedFileCount = loadData("fileCount");
+        int realFileCount = Objects.requireNonNull(getAssetsFolder().list()).length;
+        if (savedFileCount != realFileCount) {
+            showToast("检测到文件夹有变化，开始扫描");
+            new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    //SystemClock.sleep(2000);
+                    long timeBegin = System.currentTimeMillis();
+                    AssetsProvider.getInstance(AssetsActivity.this).getAssetsInfoFromStorage();
+                    long timeSecond = System.currentTimeMillis();
+                    mHandler.sendMessage(mHandler.obtainMessage(1, (int) ((timeSecond - timeBegin) / 1000), 0));
+                    // 扫描数据库中的记录，如果应用不存在就删除记录，并且更新RecyclerView
+                    //AssetsProvider.getInstance(mContext).deleteItemIfNotExist();
+                    AssetsProvider.getInstance(AssetsActivity.this).getAssetsInfoFromDB("");
+                    long timeEnd = System.currentTimeMillis();
+                    mHandler.sendMessage(mHandler.obtainMessage(2, (int) ((timeEnd - timeSecond) / 1000), 0));
+                }
+            }).start();
+        }
     }
 
     @Override
@@ -92,11 +114,12 @@ public class AssetsActivity extends BaseActivity {
         super.handleMessage(msg);
         switch (msg.what) {
             case 0:
-                tabsAdapter.setTabs(AssetsProvider.getInstance(mContext).getTabTypes());
+                showToast("数据库加载完成");
+                tabsAdapter.setTabs(AssetsProvider.getInstance(AssetsActivity.this).getTabTypes());
                 break;
             case 1:
                 showToast("插件扫描完成:" + msg.arg1 + "s");
-                tabsAdapter.setTabs(AssetsProvider.getInstance(mContext).getTabTypes());
+                tabsAdapter.setTabs(AssetsProvider.getInstance(AssetsActivity.this).getTabTypes());
                 break;
             case 2:
                 showToast("数据库更新完毕:" + msg.arg1 + "s");

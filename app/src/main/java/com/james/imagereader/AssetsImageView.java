@@ -69,6 +69,11 @@ public class AssetsImageView extends AppCompatImageView {
                 return result;
             }
 
+            @Override
+            public void onLongPress(@NonNull MotionEvent e) {
+                super.onLongPress(e);
+
+            }
         });
     }
     private static final int SWIPE_THRESHOLD = 80;

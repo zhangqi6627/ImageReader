@@ -1,5 +1,7 @@
 package com.james.imagereader;
 
+import android.Manifest;
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.ApplicationInfo;
@@ -8,13 +10,17 @@ import android.content.pm.PackageManager;
 import android.content.res.AssetManager;
 import android.content.res.Resources;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
+import android.os.Environment;
 import android.os.Handler;
 import android.os.Message;
+import android.provider.Settings;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.support.v4.app.ActivityCompat;
+import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
-import android.text.TextUtils;
 import android.util.Log;
 import android.view.WindowManager;
 import android.widget.Toast;
@@ -25,6 +31,7 @@ import java.lang.reflect.Method;
 public class BaseActivity extends AppCompatActivity {
     protected final Context mContext = BaseActivity.this;
     private final String TAG = BaseActivity.this.getClass().getName();
+    public final static int PERMISSION_REQUEST_CODE = 3;
 
     private Toast mToast;
 
@@ -57,6 +64,7 @@ public class BaseActivity extends AppCompatActivity {
         getSharedPreferences("records", Context.MODE_PRIVATE).edit().putInt(key, value).apply();
     }
 
+    @SuppressLint("HandlerLeak")
     protected Handler mHandler = new Handler() {
         @Override
         public void handleMessage(@NonNull Message msg) {
@@ -71,30 +79,91 @@ public class BaseActivity extends AppCompatActivity {
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        int length = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS).list().length;
+        Log.e("zq8888", "downloads: " + length);
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_SECURE);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            // 先判断有没有权限
+            if (Environment.isExternalStorageManager()) {
+                Toast.makeText(this, "MANAGE_EXTERNAL_STORAGE GRANTED!", Toast.LENGTH_LONG).show();
+                onPermissionGranted();
+            } else {
+                Toast.makeText(this, "NO MANAGE_EXTERNAL_STORAGE GRANTED!", Toast.LENGTH_LONG).show();
+                Intent intent = new Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION);
+                intent.setData(Uri.parse("package:" + this.getPackageName()));
+                startActivityForResult(intent, 3);
+            }
+        } else {
+            if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE)
+                    == PackageManager.PERMISSION_GRANTED && ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE)
+                    == PackageManager.PERMISSION_GRANTED) {
+            } else {
+                // 请求读取外部存储的权限
+                ActivityCompat.requestPermissions(this,
+                        new String[]{Manifest.permission.READ_EXTERNAL_STORAGE, Manifest.permission.WRITE_EXTERNAL_STORAGE}, PERMISSION_REQUEST_CODE);
+            }
+        }
     }
 
-    protected Resources loadPackageResource(String packageName) {
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        switch (requestCode) {
+            case PERMISSION_REQUEST_CODE:
+                if ((grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) || Environment.isExternalStorageManager()) {
+                    onPermissionGranted();
+                } else {
+                    showToast("No permission");
+                }
+                Log.e("zq8888", "onRequest()");
+                break;
+        }
+    }
+
+    protected void onPermissionGranted() {
+
+    }
+
+    protected String getPackageName(String apkPath) {
+        PackageInfo info = mContext.getPackageManager().getPackageArchiveInfo(apkPath, PackageManager.GET_ACTIVITIES);
+        if (info != null) {
+            ApplicationInfo appInfo = info.applicationInfo;
+            try {
+                return appInfo.packageName;
+            } catch (Exception e) {
+                Log.e("zq8888", e.toString());
+            }
+        }
+        return null;
+    }
+
+    protected Resources loadPackageResource(String nameOrPath) {
+        return new Resources(getPluginAssets(getApkPath(nameOrPath)), getResources().getDisplayMetrics(), getResources().getConfiguration());
+    }
+
+    protected String getApkPath(String nameOrPath) {
+        if (nameOrPath != null && nameOrPath.endsWith(".apk")) {
+            return nameOrPath;
+        }
         String dexPath = null;
         try {
-            ApplicationInfo applicationInfo = getPackageManager().getApplicationInfo(packageName, 0);
+            ApplicationInfo applicationInfo = getPackageManager().getApplicationInfo(nameOrPath, 0);
             dexPath = applicationInfo.sourceDir;
         } catch (PackageManager.NameNotFoundException e) {
             e.printStackTrace();
         }
-        //check path
-        if (TextUtils.isEmpty(dexPath)) {
-            return null;
-        }
+        return dexPath;
+    }
 
-        Context pluginContext = null;
-        try {
-            pluginContext = createPackageContext(packageName, Context.CONTEXT_IGNORE_SECURITY | Context.CONTEXT_INCLUDE_CODE);
-        } catch (PackageManager.NameNotFoundException e) {
-            e.printStackTrace();
+    protected File getAssetsFolder() {
+        File imageReaderFolder = new File(Environment.getExternalStorageDirectory().getAbsolutePath() + "/ImageReader/");
+        if (!imageReaderFolder.exists() && imageReaderFolder.mkdir()) {
+            Log.e("zq8888", "mkdir success");
         }
+        return imageReaderFolder;
+    }
 
-        PackageInfo pluginPackageArchiveInfo = getPackageManager().getPackageArchiveInfo(dexPath, PackageManager.GET_ACTIVITIES);
+    protected AssetManager getPluginAssets(String dexPath) {
         AssetManager assets = null;
         try {
             assets = AssetManager.class.newInstance();
@@ -103,7 +172,7 @@ public class BaseActivity extends AppCompatActivity {
         } catch (Exception e) {
             e.printStackTrace();
         }
-        return new Resources(assets, getResources().getDisplayMetrics(), getResources().getConfiguration());
+        return assets;
     }
 
     protected void uninstall(String packageName) {
@@ -113,28 +182,28 @@ public class BaseActivity extends AppCompatActivity {
         startActivityForResult(intent, 102);
     }
 
-    protected long getPackageSize(String packageName) {
-        long packageSize = 0;
-        try {
-            ApplicationInfo applicationInfo = getPackageManager().getApplicationInfo(packageName, 0);
-            packageSize = new File(applicationInfo.sourceDir).length();
-            Log.e("zq8888", "packageSize: " + packageSize);
-            //assetInfo.setPackageSize(packageSize);
-        } catch (PackageManager.NameNotFoundException e) {
-            throw new RuntimeException(e);
-        }
-        return packageSize;
+    protected long getPackageSize(String nameOrPath) {
+        return new File(getApkPath(nameOrPath)).length();
     }
 
-    protected String getAssetString(String packageName, String idName) {
-        Resources mResources = loadPackageResource(packageName);
-        int strId = mResources.getIdentifier(idName, "string", packageName);
+    protected String getAssetString(String nameOrPath, String idName) {
+        Resources mResources = loadPackageResource(nameOrPath);
+        String mPackageName = nameOrPath;
+        if (nameOrPath.endsWith(".apk")) {
+            mPackageName = getPackageName(nameOrPath);
+        }
+        int strId = mResources.getIdentifier(idName, "string", mPackageName);
         return mResources.getString(strId);
     }
 
-    protected int getAssetInt(String packageName, String idName) {
-        Resources mResources = loadPackageResource(packageName);
-        int strId = mResources.getIdentifier(idName, "integer", packageName);
+    protected int getAssetInt(String nameOrPath, String idName) {
+        Resources mResources = loadPackageResource(nameOrPath);
+        String mPackageName = nameOrPath;
+        if (nameOrPath.endsWith(".apk")) {
+            mPackageName = getPackageName(nameOrPath);
+        }
+        Log.e("zq8888", "packageName: " + mPackageName + " nameOrPath:" + nameOrPath);
+        int strId = mResources.getIdentifier(idName, "integer", mPackageName);
         return mResources.getInteger(strId);
     }
 

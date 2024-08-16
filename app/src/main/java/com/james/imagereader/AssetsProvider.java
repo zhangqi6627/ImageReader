@@ -9,10 +9,12 @@ import android.content.res.Resources;
 import android.database.Cursor;
 import android.database.SQLException;
 import android.database.sqlite.SQLiteDatabase;
+import android.os.Environment;
 import android.text.TextUtils;
 import android.util.Log;
 
 import java.io.File;
+import java.io.FilenameFilter;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -21,52 +23,94 @@ import java.util.Map;
 
 public class AssetsProvider {
     public final static String TAG = "AssetsProvider";
-    private final Context mContext;
+    private final BaseActivity mContext;
     private static AssetsProvider assetsProvider;
     private final DatabaseHelper mDatabaseHelper;
 
-    private AssetsProvider(Context context) {
+    private AssetsProvider(BaseActivity context) {
         mContext = context;
         mDatabaseHelper = new DatabaseHelper(mContext);
     }
 
-    public static AssetsProvider getInstance(Context context) {
+    public static AssetsProvider getInstance(BaseActivity context) {
         if (assetsProvider == null) {
             assetsProvider = new AssetsProvider(context);
         }
         return assetsProvider;
     }
 
-    public List<AssetInfo> getAssetsInfoFromApk() {
+    protected String getPackageName(String apkPath) {
+        PackageInfo info = mContext.getPackageManager().getPackageArchiveInfo(apkPath, PackageManager.GET_ACTIVITIES);
+        if (info != null) {
+            ApplicationInfo appInfo = info.applicationInfo;
+            try {
+                return appInfo.packageName;
+            } catch (Exception e) {
+                Log.e("zq8888", e.toString());
+            }
+        }
+        return null;
+    }
+
+    public List<AssetInfo> getAssetsInfoFromStorage() {
+        List<AssetInfo> assetInfos = new ArrayList<>();
+        tabTypes = new HashMap<>();
+        SQLiteDatabase mDatabase = mDatabaseHelper.getWritableDatabase();
+        File assetsFolder = mContext.getAssetsFolder();
+        File[] apkFiles = assetsFolder.listFiles();
+        if (apkFiles == null || apkFiles.length == 0) {
+            return null;
+        }
+        for (File apkFile : apkFiles) {
+            String pkgName = getPackageName(apkFile.getAbsolutePath());
+            long pkgSize = apkFile.length();
+            String displayName = apkFile.getName();
+            int imageCount = Integer.parseInt(mContext.getAssetString(apkFile.getAbsolutePath(), "image_count"));
+            AssetInfo assetInfo = new AssetInfo(pkgName, pkgSize, displayName, imageCount);
+            assetInfos.add(assetInfo);
+            String typeName = pkgName.split("\\.")[3];
+            tabTypes.merge(typeName, 1, Integer::sum);
+            try {
+                mDatabase.replaceOrThrow(DatabaseHelper.TABLE_NAME, null, assetInfo.getContentValues());
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+        }
+        mContext.saveData("fileCount", apkFiles.length);
+        return assetInfos;
+    }
+
+    public List<AssetInfo> getAssetsInfoFromInstalledPackage() {
         List<PackageInfo> packageInfoList = mContext.getPackageManager().getInstalledPackages(0);
         List<AssetInfo> assetInfos = new ArrayList<>();
         tabTypes = new HashMap<>();
         SQLiteDatabase mDatabase = mDatabaseHelper.getWritableDatabase();
+        mDatabase.beginTransaction();
         for (PackageInfo packageInfo : packageInfoList) {
             if (packageInfo.packageName.contains("com.golds.assets.")) {
                 String pkgName = packageInfo.packageName;
                 long pkgSize = new File(packageInfo.applicationInfo.sourceDir).length();
-                String displayName = getAssetString(pkgName, "app_name");
+                String displayName = mContext.getAssetString(pkgName, "app_name");
                 if ("0".equalsIgnoreCase(displayName)) {
                     continue;
                 }
-                int imageCount = Integer.parseInt(getAssetString(pkgName, "image_count"));
+                int imageCount = mContext.getAssetInt(pkgName, "image_count");
                 AssetInfo assetInfo = new AssetInfo(pkgName, pkgSize, displayName, imageCount);
                 assetInfos.add(assetInfo);
                 String typeName = pkgName.split("\\.")[3];
-                Integer typeCount = tabTypes.get(typeName);
-                if (typeCount == null) {
-                    tabTypes.put(typeName, 1);
-                } else {
-                    tabTypes.put(typeName, typeCount + 1);
-                }
+                tabTypes.merge(typeName, 1, Integer::sum);
                 try {
-                    mDatabase.insertOrThrow(DatabaseHelper.TABLE_NAME, null, assetInfo.getContentValues());
+                    int updateResult = mDatabase.update(DatabaseHelper.TABLE_NAME, assetInfo.getContentValues(), "packageName=?", new String[]{assetInfo.getPackageName()});
+                    if (updateResult <= 0) {
+                        mDatabase.replaceOrThrow(DatabaseHelper.TABLE_NAME, null, assetInfo.getContentValues());
+                    }
                 } catch (SQLException e) {
                     e.printStackTrace();
                 }
             }
         }
+        mDatabase.setTransactionSuccessful();
+        mDatabase.endTransaction();
         return assetInfos;
     }
 
@@ -91,7 +135,7 @@ public class AssetsProvider {
             do {
                 String packageName = mCursor.getString(mCursor.getColumnIndexOrThrow(DatabaseHelper.COLUMN_PACKAGE_NAME));
                 String mType = packageName.split("\\.")[3];
-                if (packageName.contains("com.golds.assets." + type + ".")) {
+                if (selection == null || packageName.contains("com.golds.assets." + type + ".")) {
                     String displayName = mCursor.getString(mCursor.getColumnIndexOrThrow(DatabaseHelper.COLUMN_DISPLAY_NAME));
                     long packageSize = mCursor.getLong(mCursor.getColumnIndexOrThrow(DatabaseHelper.COLUMN_PACKAGE_SIZE));
                     int progress = mCursor.getInt(mCursor.getColumnIndexOrThrow(DatabaseHelper.COLUMN_PROGRESS));
@@ -99,17 +143,12 @@ public class AssetsProvider {
                     int imageCount = mCursor.getInt(mCursor.getColumnIndexOrThrow(DatabaseHelper.COLUMN_IMAGE_COUNT));
                     int favorite = mCursor.getInt(mCursor.getColumnIndexOrThrow(DatabaseHelper.COLUMN_FAVORITE));
                     AssetInfo assetInfo = new AssetInfo(packageName, packageSize, displayName, imageCount, favorite == 1, progress, offset);
-                    Log.e(TAG, "mType: " + mType + " assetInfo: " + assetInfo);
                     assetInfos.add(assetInfo);
                 }
-                tabTypes.put(mType, assetInfos.size());
+                tabTypes.merge(mType, 1, Integer::sum);
             } while (mCursor.moveToNext());
             mCursor.close();
         }
-        if (!TextUtils.isEmpty(type)) {
-            tabTypes.put(type, assetInfos.size());
-        }
-
         return assetInfos;
     }
 
@@ -123,52 +162,5 @@ public class AssetsProvider {
                 }
             } while (cursor.moveToNext());
         }
-    }
-
-    protected String getAssetString(String packageName, String idName) {
-        Resources mResources = loadPackageResource(packageName);
-        if (mResources == null) {
-            return "0";
-        }
-        int strId = mResources.getIdentifier(idName, "string", packageName);
-        return mResources.getString(strId);
-    }
-
-    protected int getAssetInt(String packageName, String idName) {
-        Resources mResources = loadPackageResource(packageName);
-        int strId = mResources.getIdentifier(idName, "integer", packageName);
-        return mResources.getInteger(strId);
-    }
-
-    protected Resources loadPackageResource(String packageName) {
-        String dexPath = null;
-        try {
-            ApplicationInfo applicationInfo = mContext.getPackageManager().getApplicationInfo(packageName, 0);
-            dexPath = applicationInfo.sourceDir;
-        } catch (PackageManager.NameNotFoundException e) {
-            e.printStackTrace();
-        }
-        //check path
-        if (TextUtils.isEmpty(dexPath)) {
-            return null;
-        }
-
-        Context pluginContext = null;
-        try {
-            pluginContext = mContext.createPackageContext(packageName, Context.CONTEXT_IGNORE_SECURITY | Context.CONTEXT_INCLUDE_CODE);
-        } catch (PackageManager.NameNotFoundException e) {
-            e.printStackTrace();
-        }
-
-        PackageInfo pluginPackageArchiveInfo = mContext.getPackageManager().getPackageArchiveInfo(dexPath, PackageManager.GET_ACTIVITIES);
-        AssetManager assets = null;
-        try {
-            assets = AssetManager.class.newInstance();
-            Method addAssetPath = AssetManager.class.getMethod("addAssetPath", String.class);
-            addAssetPath.invoke(assets, dexPath);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return new Resources(assets, mContext.getResources().getDisplayMetrics(), mContext.getResources().getConfiguration());
     }
 }
