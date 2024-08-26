@@ -1,12 +1,16 @@
 package com.james.imagereader;
 
 import android.Manifest;
+import android.graphics.Bitmap;
+import android.graphics.drawable.BitmapDrawable;
+import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.Message;
 import android.os.SystemClock;
 import android.support.design.widget.TabLayout;
 import android.support.v4.app.ActivityCompat;
+import android.support.v4.graphics.drawable.RoundedBitmapDrawable;
 import android.support.v4.view.ViewPager;
 import android.util.Log;
 
@@ -41,6 +45,9 @@ import java.util.Objects;
  *  #22.插入数据库的时候用事务处理，会导致数据库查询卡住
  *  #23.TAB 下面显示每种类型的apk数量?
  *  24.图片显示还有问题，有些图片没有显示屏幕宽度
+ *  25.遍历扫描指定路径下的所有apk文件
+ *  26.判断是否能上google
+ *  27.如果不能显示国外的广告就显示自己的广告
  */
 public class AssetsActivity extends BaseActivity {
     private final static String TAG = "AlbumsActivity";

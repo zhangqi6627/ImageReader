@@ -71,7 +71,7 @@ public class AssetsProvider {
             String typeName = pkgName.split("\\.")[3];
             tabTypes.merge(typeName, 1, Integer::sum);
             try {
-                mDatabase.replaceOrThrow(DatabaseHelper.TABLE_NAME, null, assetInfo.getContentValues());
+                mDatabase.insert(DatabaseHelper.TABLE_NAME, null, assetInfo.getContentValues());
             } catch (SQLException e) {
                 e.printStackTrace();
             }
