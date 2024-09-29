@@ -9,7 +9,6 @@ import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.content.res.AssetManager;
 import android.content.res.Resources;
-import android.graphics.Bitmap;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
@@ -27,7 +26,13 @@ import android.view.WindowManager;
 import android.widget.Toast;
 
 import java.io.File;
+import java.io.FilenameFilter;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 public class BaseActivity extends AppCompatActivity {
     protected final Context mContext = BaseActivity.this;
@@ -86,7 +91,7 @@ public class BaseActivity extends AppCompatActivity {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
             // 先判断有没有权限
             if (Environment.isExternalStorageManager()) {
-                Toast.makeText(this, "MANAGE_EXTERNAL_STORAGE GRANTED!", Toast.LENGTH_LONG).show();
+//                Toast.makeText(this, "MANAGE_EXTERNAL_STORAGE GRANTED!", Toast.LENGTH_LONG).show();
                 onPermissionGranted();
             } else {
                 Toast.makeText(this, "NO MANAGE_EXTERNAL_STORAGE GRANTED!", Toast.LENGTH_LONG).show();
@@ -104,7 +109,6 @@ public class BaseActivity extends AppCompatActivity {
                         new String[]{Manifest.permission.READ_EXTERNAL_STORAGE, Manifest.permission.WRITE_EXTERNAL_STORAGE}, PERMISSION_REQUEST_CODE);
             }
         }
-        //Bitmap.createScaledBitmap()
     }
 
     @Override
@@ -157,12 +161,32 @@ public class BaseActivity extends AppCompatActivity {
         return dexPath;
     }
 
-    protected File getAssetsFolder() {
+    protected void alog(String msg) {
+        Log.e("zq8888", Thread.currentThread().getStackTrace()[2].getClassName() + "-->" + Thread.currentThread().getStackTrace()[2].getMethodName() + "()-->" + Thread.currentThread().getStackTrace()[2].getLineNumber() + "msg: " + msg);
+    }
+
+    protected File[] getAssetsApkFiles() {
         File imageReaderFolder = new File(Environment.getExternalStorageDirectory().getAbsolutePath() + "/ImageReader/");
         if (!imageReaderFolder.exists() && imageReaderFolder.mkdir()) {
             Log.e("zq8888", "mkdir success");
         }
-        return imageReaderFolder;
+        scanAssetsFiles(imageReaderFolder);
+        for (File assetsFile : assetsApkFiles) {
+            //alog(assetsFile.getAbsolutePath());
+        }
+        return assetsApkFiles.toArray(new File[]{});
+    }
+
+    private Set<File> assetsApkFiles = new HashSet<>();
+
+    protected void scanAssetsFiles(File file) {
+        for (File subFile : file.listFiles()) {
+            if (subFile.isDirectory()) {
+                scanAssetsFiles(subFile);
+            } else if (subFile.getName().endsWith(".apk")) {
+                assetsApkFiles.add(subFile);
+            }
+        }
     }
 
     protected AssetManager getPluginAssets(String dexPath) {

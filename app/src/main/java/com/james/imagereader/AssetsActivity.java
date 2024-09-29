@@ -1,23 +1,16 @@
 package com.james.imagereader;
 
 import android.Manifest;
-import android.graphics.Bitmap;
-import android.graphics.drawable.BitmapDrawable;
-import android.graphics.drawable.Drawable;
 import android.os.Bundle;
-import android.os.Environment;
 import android.os.Message;
-import android.os.SystemClock;
 import android.support.design.widget.TabLayout;
 import android.support.v4.app.ActivityCompat;
-import android.support.v4.graphics.drawable.RoundedBitmapDrawable;
 import android.support.v4.view.ViewPager;
 import android.util.Log;
 
 import java.io.File;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Objects;
 
 /**
  * TODO：
@@ -91,11 +84,15 @@ public class AssetsActivity extends BaseActivity {
             @Override
             public void run() {
                 List<AssetInfo> assetInfos = AssetsProvider.getInstance(AssetsActivity.this).getAssetsInfoFromDB("");
+                alog(assetInfos.size()+"");
                 mHandler.sendEmptyMessageDelayed(0, 0);
             }
         });
         int savedFileCount = loadData("fileCount");
-        int realFileCount = Objects.requireNonNull(getAssetsFolder().list()).length;
+        File[] apkFiles = getAssetsApkFiles();
+        int realFileCount = apkFiles.length;
+        Log.e("zq8888", Thread.currentThread().getStackTrace()[2].getClassName()+"-->"+Thread.currentThread().getStackTrace()[2].getMethodName()+"()-->"+Thread.currentThread().getStackTrace()[2].getLineNumber()+" realFileCount:" + realFileCount);
+
         if (savedFileCount != realFileCount) {
             showToast("检测到文件夹有变化，开始扫描");
             new Thread(new Runnable() {

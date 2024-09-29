@@ -24,6 +24,7 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -146,15 +147,10 @@ public class AssetsFragment extends Fragment {
             AssetInfo assetInfo = assetInfos.get(position);
             String packageName = assetInfo.getPackageName();
             String displayName = assetInfo.getDisplayName().replace(".apk", "");
-            holder.tv_title.setText(displayName);
+            holder.tv_title.setText(new File(displayName).getName());
             holder.rootLayout.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
-//                    if (!Utils.isAppInstalled(mActivity, packageName)) {
-//                        Toast.makeText(mActivity, "App not installed or has been uninstalled.", Toast.LENGTH_LONG).show();
-//                        return;
-//                    }
-
                     Intent mIntent = new Intent(mActivity, ImagesActivity.class);
                     mIntent.putExtra("displayName", displayName);
                     mIntent.putExtra("packageName", packageName);
@@ -165,8 +161,6 @@ public class AssetsFragment extends Fragment {
             holder.rootLayout.setOnLongClickListener(new View.OnLongClickListener() {
                 @Override
                 public boolean onLongClick(View v) {
-                    //mActivity.uninstall(packageName);
-                    //scanAssetsInfo();
                     return true;
                 }
             });

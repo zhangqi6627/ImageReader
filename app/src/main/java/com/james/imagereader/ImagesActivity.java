@@ -76,7 +76,7 @@ public class ImagesActivity extends BaseActivity {
         packageName = getIntent().getStringExtra("packageName");
         assetInfo = getDBHelper().getAssetInfo(packageName);
         albumIndex = getIntent().getIntExtra("albumIndex", 0);
-        String apkPath = Environment.getExternalStorageDirectory().getPath() + "/ImageReader/" + assetInfo.getDisplayName();
+        String apkPath = assetInfo.getDisplayName();
 
         setContentView(R.layout.activity_images);
         rl_toolbar = findViewById(R.id.rl_toolbar);

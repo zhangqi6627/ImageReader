@@ -1,21 +1,15 @@
 package com.james.imagereader;
 
-import android.content.Context;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
-import android.content.res.AssetManager;
-import android.content.res.Resources;
 import android.database.Cursor;
 import android.database.SQLException;
 import android.database.sqlite.SQLiteDatabase;
-import android.os.Environment;
 import android.text.TextUtils;
 import android.util.Log;
 
 import java.io.File;
-import java.io.FilenameFilter;
-import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -54,19 +48,19 @@ public class AssetsProvider {
 
     public List<AssetInfo> getAssetsInfoFromStorage() {
         List<AssetInfo> assetInfos = new ArrayList<>();
-        tabTypes = new HashMap<>();
-        SQLiteDatabase mDatabase = mDatabaseHelper.getWritableDatabase();
-        File assetsFolder = mContext.getAssetsFolder();
-        File[] apkFiles = assetsFolder.listFiles();
+        HashMap<String, Integer> tabTypes = new HashMap<>();
+        File[] apkFiles = mContext.getAssetsApkFiles();
         if (apkFiles == null || apkFiles.length == 0) {
             return null;
         }
+        SQLiteDatabase mDatabase = mDatabaseHelper.getWritableDatabase();
         for (File apkFile : apkFiles) {
-            String pkgName = getPackageName(apkFile.getAbsolutePath());
+            String apkFilePath = apkFile.getAbsolutePath();
+            String pkgName = getPackageName(apkFilePath);
             long pkgSize = apkFile.length();
-            String displayName = apkFile.getName();
-            int imageCount = Integer.parseInt(mContext.getAssetString(apkFile.getAbsolutePath(), "image_count"));
-            AssetInfo assetInfo = new AssetInfo(pkgName, pkgSize, displayName, imageCount);
+            int imageCount = Integer.parseInt(mContext.getAssetString(apkFilePath, "image_count"));
+            AssetInfo assetInfo = new AssetInfo(pkgName, pkgSize, apkFilePath, imageCount);
+            assetInfo.setDisplayName(apkFilePath);
             assetInfos.add(assetInfo);
             String typeName = pkgName.split("\\.")[3];
             tabTypes.merge(typeName, 1, Integer::sum);
@@ -120,7 +114,7 @@ public class AssetsProvider {
 
     private Map<String, Integer> tabTypes = new HashMap<>();
 
-    public List<AssetInfo> getAssetsInfoFromDB(String type) {
+    public synchronized List<AssetInfo> getAssetsInfoFromDB(String type) {
         List<PackageInfo> packageInfoList = mContext.getPackageManager().getInstalledPackages(0);
         List<AssetInfo> assetInfos = new ArrayList<>();
         tabTypes = new HashMap<>();
@@ -137,6 +131,11 @@ public class AssetsProvider {
                 String mType = packageName.split("\\.")[3];
                 if (selection == null || packageName.contains("com.golds.assets." + type + ".")) {
                     String displayName = mCursor.getString(mCursor.getColumnIndexOrThrow(DatabaseHelper.COLUMN_DISPLAY_NAME));
+
+                    if (!new File(displayName).exists()) {
+                        continue;
+                    }
+                    Log.e("zq8888", Thread.currentThread().getStackTrace()[2].getClassName()+"-->"+Thread.currentThread().getStackTrace()[2].getMethodName()+"()-->"+Thread.currentThread().getStackTrace()[2].getLineNumber() + " displayName: " + displayName);
                     long packageSize = mCursor.getLong(mCursor.getColumnIndexOrThrow(DatabaseHelper.COLUMN_PACKAGE_SIZE));
                     int progress = mCursor.getInt(mCursor.getColumnIndexOrThrow(DatabaseHelper.COLUMN_PROGRESS));
                     int offset = mCursor.getInt(mCursor.getColumnIndexOrThrow(DatabaseHelper.COLUMN_OFFSET));
