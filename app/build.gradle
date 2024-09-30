@@ -16,6 +16,11 @@ android {
         targetSdkVersion 34
         versionCode 1
         versionName "1.0"
+        externalNativeBuild {
+            cmake {
+                cppFlags ''
+            }
+        }
     }
 
     signingConfigs {
@@ -38,6 +43,12 @@ android {
         sourceCompatibility JavaVersion.VERSION_1_8
         targetCompatibility JavaVersion.VERSION_1_8
     }
+    externalNativeBuild {
+        cmake {
+            path file('src/main/cpp/CMakeLists.txt')
+            version '3.22.1'
+        }
+    }
 
 
 }
@@ -46,4 +57,5 @@ dependencies {
     implementation 'com.android.support:recyclerview-v7:28.0.0'
     implementation 'com.android.support:design:28.0.0'
     implementation 'com.android.support:appcompat-v7:28.0.0'
+    implementation 'net.lingala.zip4j:zip4j:2.11.5'
 }

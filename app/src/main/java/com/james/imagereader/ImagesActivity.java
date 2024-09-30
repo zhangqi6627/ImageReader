@@ -39,6 +39,7 @@ import java.io.InputStream;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Objects;
+import java.util.zip.ZipInputStream;
 
 /**
  * TODO: 沉浸式
@@ -73,12 +74,24 @@ public class ImagesActivity extends BaseActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_images);
+        if (getIntent() != null &&  Intent.ACTION_VIEW.equalsIgnoreCase(getIntent().getAction()) && "application/zip".equalsIgnoreCase(getIntent().getType())) {
+            String zipFilePath = UriUtils.getFileAbsolutePath(this, getIntent().getData());
+            try {
+                String zipFolderName = new File(zipFilePath).getName().replace(".zip", "");
+                Log.e("zq8888", "onCreate(2) zipFolderName: " + zipFilePath);
+                File cacheFolder = new File(Environment.getExternalStorageDirectory().getAbsolutePath() + File.separator + "0000/18r/cache");
+
+                Utils.unZip(zipFilePath, cacheFolder.getAbsolutePath());
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+            return;
+        }
         packageName = getIntent().getStringExtra("packageName");
         assetInfo = getDBHelper().getAssetInfo(packageName);
         albumIndex = getIntent().getIntExtra("albumIndex", 0);
         String apkPath = assetInfo.getDisplayName();
-
-        setContentView(R.layout.activity_images);
         rl_toolbar = findViewById(R.id.rl_toolbar);
         rv_image = findViewById(R.id.rv_image);
         iv_cover = findViewById(R.id.iv_cover);
