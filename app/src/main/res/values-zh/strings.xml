@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">"图酷"</string>
+    <string name="app_name_album">"画廊"</string>
+    <string name="scan_done">资源包扫描完成</string>
+</resources>

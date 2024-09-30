@@ -84,7 +84,7 @@ public class AssetsActivity extends BaseActivity {
             @Override
             public void run() {
                 List<AssetInfo> assetInfos = AssetsProvider.getInstance(AssetsActivity.this).getAssetsInfoFromDB("");
-                alog(assetInfos.size()+"");
+                log(assetInfos.size()+"");
                 mHandler.sendEmptyMessageDelayed(0, 0);
             }
         });

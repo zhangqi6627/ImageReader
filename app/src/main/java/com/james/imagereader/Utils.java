@@ -86,33 +86,17 @@ public class Utils {
         return false;
     }
 
-    public static void readZipFile(Context mContext, String file) throws Exception {
-        ZipFile zf = new ZipFile(file);
-        InputStream in = new BufferedInputStream(new FileInputStream(file));
-        ZipInputStream zin = new ZipInputStream(in);
-        zf.entries().asIterator();
-        zf.getEntry("");
-
-
-
-        ZipEntry ze;
-
-        while ((ze = zin.getNextEntry()) != null) {
-
-            if (ze.isDirectory()) {
-                //Do nothing
-            } else {
-                if (ze.getName().equals("sbl1.mbn")) {
-                    BufferedReader br = new BufferedReader(
-                            new InputStreamReader(zf.getInputStream(ze)));
-                    String line;
-                    while ((line = br.readLine()) != null) {
-                    }
-                    br.close();
-                }
-            }
+    public static int getStatusBarHeight(Context context) {
+        int statusHeight = -1;
+        try {
+            Class<?> clazz = Class.forName("com.android.internal.R$dimen");
+            Object object = clazz.newInstance();
+            int height = Integer.parseInt(clazz.getField("status_bar_height").get(object).toString());
+            statusHeight = context.getResources().getDimensionPixelSize(height);
+        } catch (Exception ex) {
+            ex.printStackTrace();
         }
-        zin.closeEntry();
+        return statusHeight;
     }
 
     public static void unZip(String zipFilePath, String unzipPath) throws IOException {

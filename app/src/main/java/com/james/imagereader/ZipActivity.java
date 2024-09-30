@@ -1,6 +1,5 @@
 package com.james.imagereader;
 
-import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Rect;
@@ -14,9 +13,6 @@ import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
-
-import net.lingala.zip4j.ZipFile;
-import net.lingala.zip4j.exception.ZipException;
 
 import java.io.File;
 import java.io.FilenameFilter;
@@ -42,9 +38,9 @@ public class ZipActivity extends BaseActivity {
         setContentView(R.layout.activity_images);
         String zipFilePath = UriUtils.getFileAbsolutePath(this, getIntent().getData());
         //String zipFolderName = new File(zipFilePath).getName().replace(".zip", "");
-        File cacheFolder = new File(Environment.getExternalStorageDirectory().getAbsolutePath() + File.separator + "0000/cache");
+        File cacheFolder = new File(imageReaderPath + File.separator + "cache");
         //Utils.unZip(zipFilePath, cacheFolder.getAbsolutePath());
-        unzip(zipFilePath, cacheFolder.getAbsolutePath(), mNativeApi.getPassword());
+        UriUtils.unzip(zipFilePath, cacheFolder.getAbsolutePath(), mNativeApi.getPassword());
         File[] imageFiles = cacheFolder.listFiles(new FilenameFilter() {
             @Override
             public boolean accept(File dir, String name) {
@@ -86,18 +82,6 @@ public class ZipActivity extends BaseActivity {
                 updateProgress();
             }
         });
-    }
-
-    private static void unzip(String zipFilePath, String unzipPath, String password) {
-        try {
-            ZipFile zipFile = new ZipFile(zipFilePath);
-            if (zipFile.isEncrypted()) {
-                zipFile.setPassword(password.toCharArray());
-            }
-            zipFile.extractAll(unzipPath);
-        } catch (ZipException e) {
-            e.printStackTrace();
-        }
     }
 
     private void updateProgress() {

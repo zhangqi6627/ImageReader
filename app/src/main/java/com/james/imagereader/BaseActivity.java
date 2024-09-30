@@ -1,6 +1,5 @@
 package com.james.imagereader;
 
-import android.Manifest;
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.Intent;
@@ -10,7 +9,6 @@ import android.content.pm.PackageManager;
 import android.content.res.AssetManager;
 import android.content.res.Resources;
 import android.net.Uri;
-import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
@@ -18,20 +16,14 @@ import android.os.Message;
 import android.provider.Settings;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
-import android.support.v4.app.ActivityCompat;
-import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.WindowManager;
 import android.widget.Toast;
 
 import java.io.File;
-import java.io.FilenameFilter;
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 
 public class BaseActivity extends AppCompatActivity {
@@ -47,10 +39,6 @@ public class BaseActivity extends AppCompatActivity {
         }
         mToast.setText(msg);
         mToast.show();
-    }
-
-    protected void showDialog() {
-        // TODO:
     }
 
     private DatabaseHelper mDatabaseHelper;
@@ -85,44 +73,27 @@ public class BaseActivity extends AppCompatActivity {
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        int length = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS).list().length;
-        Log.e("zq8888", "downloads: " + length);
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_SECURE);
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-            // 先判断有没有权限
-            if (Environment.isExternalStorageManager()) {
-//                Toast.makeText(this, "MANAGE_EXTERNAL_STORAGE GRANTED!", Toast.LENGTH_LONG).show();
-                onPermissionGranted();
-            } else {
-                Toast.makeText(this, "NO MANAGE_EXTERNAL_STORAGE GRANTED!", Toast.LENGTH_LONG).show();
-                Intent intent = new Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION);
-                intent.setData(Uri.parse("package:" + this.getPackageName()));
-                startActivityForResult(intent, 3);
-            }
+        // 先判断有没有权限
+        if (Environment.isExternalStorageManager()) {
+            onPermissionGranted();
         } else {
-            if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE)
-                    == PackageManager.PERMISSION_GRANTED && ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE)
-                    == PackageManager.PERMISSION_GRANTED) {
-            } else {
-                // 请求读取外部存储的权限
-                ActivityCompat.requestPermissions(this,
-                        new String[]{Manifest.permission.READ_EXTERNAL_STORAGE, Manifest.permission.WRITE_EXTERNAL_STORAGE}, PERMISSION_REQUEST_CODE);
-            }
+            Toast.makeText(this, "NO MANAGE_EXTERNAL_STORAGE GRANTED!", Toast.LENGTH_LONG).show();
+            Intent intent = new Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION);
+            intent.setData(Uri.parse("package:" + this.getPackageName()));
+            startActivityForResult(intent, 3);
         }
     }
 
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-        switch (requestCode) {
-            case PERMISSION_REQUEST_CODE:
-                if ((grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) || Environment.isExternalStorageManager()) {
-                    onPermissionGranted();
-                } else {
-                    showToast("No permission");
-                }
-                Log.e("zq8888", "onRequest()");
-                break;
+        if (requestCode == PERMISSION_REQUEST_CODE) {
+            if ((grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) || Environment.isExternalStorageManager()) {
+                onPermissionGranted();
+            } else {
+                showToast("No permission");
+            }
         }
     }
 
@@ -137,7 +108,7 @@ public class BaseActivity extends AppCompatActivity {
             try {
                 return appInfo.packageName;
             } catch (Exception e) {
-                Log.e("zq8888", e.toString());
+                Log.e(TAG, e.toString());
             }
         }
         return null;
@@ -161,19 +132,17 @@ public class BaseActivity extends AppCompatActivity {
         return dexPath;
     }
 
-    protected void alog(String msg) {
-        Log.e("zq8888", Thread.currentThread().getStackTrace()[2].getClassName() + "-->" + Thread.currentThread().getStackTrace()[2].getMethodName() + "()-->" + Thread.currentThread().getStackTrace()[2].getLineNumber() + "msg: " + msg);
+    protected void log(String msg) {
+        Log.e(TAG, Thread.currentThread().getStackTrace()[2].getClassName() + "-->" + Thread.currentThread().getStackTrace()[2].getMethodName() + "()-->" + Thread.currentThread().getStackTrace()[2].getLineNumber() + "msg: " + msg);
     }
+    protected String imageReaderPath = Environment.getExternalStorageDirectory().getAbsolutePath() + File.separator + "0000ImageReader";
 
     protected File[] getAssetsApkFiles() {
-        File imageReaderFolder = new File(Environment.getExternalStorageDirectory().getAbsolutePath() + "/ImageReader/");
+        File imageReaderFolder = new File(imageReaderPath);
         if (!imageReaderFolder.exists() && imageReaderFolder.mkdir()) {
-            Log.e("zq8888", "mkdir success");
+            Log.e(TAG, "mkdir success");
         }
         scanAssetsFiles(imageReaderFolder);
-        for (File assetsFile : assetsApkFiles) {
-            //alog(assetsFile.getAbsolutePath());
-        }
         return assetsApkFiles.toArray(new File[]{});
     }
 
@@ -218,8 +187,7 @@ public class BaseActivity extends AppCompatActivity {
         if (nameOrPath.endsWith(".apk")) {
             mPackageName = getPackageName(nameOrPath);
         }
-        int strId = mResources.getIdentifier(idName, "string", mPackageName);
-        return mResources.getString(strId);
+        return mResources.getString(mResources.getIdentifier(idName, "string", mPackageName));
     }
 
     protected int getAssetInt(String nameOrPath, String idName) {
@@ -228,21 +196,6 @@ public class BaseActivity extends AppCompatActivity {
         if (nameOrPath.endsWith(".apk")) {
             mPackageName = getPackageName(nameOrPath);
         }
-        Log.e("zq8888", "packageName: " + mPackageName + " nameOrPath:" + nameOrPath);
-        int strId = mResources.getIdentifier(idName, "integer", mPackageName);
-        return mResources.getInteger(strId);
-    }
-
-    public int getStatusBarHeight(Context context) {
-        int statusHeight = -1;
-        try {
-            Class<?> clazz = Class.forName("com.android.internal.R$dimen");
-            Object object = clazz.newInstance();
-            int height = Integer.parseInt(clazz.getField("status_bar_height").get(object).toString());
-            statusHeight = context.getResources().getDimensionPixelSize(height);
-        } catch (Exception ex) {
-            ex.printStackTrace();
-        }
-        return statusHeight;
+        return mResources.getInteger(mResources.getIdentifier(idName, "integer", mPackageName));
     }
 }
