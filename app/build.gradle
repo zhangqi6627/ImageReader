@@ -14,8 +14,8 @@ android {
         applicationId "com.james.imagereader"
         minSdkVersion 30
         targetSdkVersion 34
-        versionCode 1
-        versionName "1.0"
+        versionCode 2
+        versionName "2.0"
         externalNativeBuild {
             cmake {
                 cppFlags ''
@@ -57,5 +57,5 @@ dependencies {
     implementation 'com.android.support:recyclerview-v7:28.0.0'
     implementation 'com.android.support:design:28.0.0'
     implementation 'com.android.support:appcompat-v7:28.0.0'
-    implementation 'net.lingala.zip4j:zip4j:2.11.5'
+    implementation 'net.lingala.zip4j:zip4j:2.11.6'
 }
