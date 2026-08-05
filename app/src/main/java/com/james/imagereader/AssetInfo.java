@@ -13,6 +13,7 @@ public class AssetInfo {
     private int imageCount;
     private boolean favorite;
     private int offset;
+    private long lastReadTime;
     private ContentValues contentValues = new ContentValues();
     public AssetInfo() {
     }
@@ -89,6 +90,14 @@ public class AssetInfo {
         this.offset = offset;
     }
 
+    public long getLastReadTime() {
+        return lastReadTime;
+    }
+
+    public void setLastReadTime(long lastReadTime) {
+        this.lastReadTime = lastReadTime;
+    }
+
     public ContentValues getContentValues() {
         ContentValues contentValues = new ContentValues();
         contentValues.put("packageName", packageName);
@@ -111,6 +120,7 @@ public class AssetInfo {
                 ", images=" + imageCount +
                 ", favorite=" + favorite +
                 ", offset=" + offset +
+                ", lastReadTime=" + lastReadTime +
                 '}';
     }
 }

@@ -44,7 +44,7 @@ public class ZipActivity extends BaseActivity {
         File[] imageFiles = cacheFolder.listFiles(new FilenameFilter() {
             @Override
             public boolean accept(File dir, String name) {
-                return name.endsWith(".jpg") || name.endsWith(".webp") || name.endsWith(".png");
+                return name.endsWith(".jpg") || name.endsWith(".webp") || name.endsWith(".png") || name.endsWith(".avif");
             }
         });
         for (File imageFile : imageFiles) {

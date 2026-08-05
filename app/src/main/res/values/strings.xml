@@ -5,4 +5,14 @@
     <string name="splash_ad_title">Ad Space</string>
     <string name="splash_ad_message">No ad is available yet. Contact us on Telegram.</string>
     <string name="splash_tg_contact">TG: @ImageCoolSupport</string>
+    <string name="sort_label">Sort</string>
+    <string name="sort_name">Name</string>
+    <string name="sort_name_asc">Name A-Z</string>
+    <string name="sort_name_desc">Name Z-A</string>
+    <string name="sort_image_count">Images</string>
+    <string name="sort_image_count_asc">Images fewer first</string>
+    <string name="sort_image_count_desc">Images more first</string>
+    <string name="sort_size">Size</string>
+    <string name="sort_size_asc">Size smaller first</string>
+    <string name="sort_size_desc">Size larger first</string>
 </resources>

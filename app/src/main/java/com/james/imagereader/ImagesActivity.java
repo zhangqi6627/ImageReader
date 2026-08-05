@@ -113,7 +113,7 @@ public class ImagesActivity extends BaseActivity {
             String[] imageFiles = pluginAsset.list("imgs");
             assert imageFiles != null;
             for (String imageFile : imageFiles) {
-                if (imageFile.endsWith(".jpg") || imageFile.endsWith(".webp")) {
+                if (imageFile.endsWith(".jpg") || imageFile.endsWith(".webp") || imageFile.endsWith(".avif")) {
                     imageList.add(imageFile);
                 }
             }
@@ -165,6 +165,9 @@ public class ImagesActivity extends BaseActivity {
 
     @Override
     public void onBackPressed() {
+        long now = System.currentTimeMillis();
+        assetInfo.setLastReadTime(now);
+        saveLongData(AssetsProvider.getLastReadTimeKey(packageName), now);
         getDBHelper().updateAssetInfo(assetInfo);
         Intent intent = new Intent();
         intent.putExtra("albumIndex", albumIndex);

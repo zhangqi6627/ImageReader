@@ -5,4 +5,14 @@
     <string name="splash_ad_title">广告位</string>
     <string name="splash_ad_message">目前暂无广告，可通过 TG 联系合作。</string>
     <string name="splash_tg_contact">TG: @ImageCoolSupport</string>
+    <string name="sort_label">排序</string>
+    <string name="sort_name">名称</string>
+    <string name="sort_name_asc">名称 A-Z</string>
+    <string name="sort_name_desc">名称 Z-A</string>
+    <string name="sort_image_count">图片数</string>
+    <string name="sort_image_count_asc">图片少优先</string>
+    <string name="sort_image_count_desc">图片多优先</string>
+    <string name="sort_size">体积</string>
+    <string name="sort_size_asc">体积小优先</string>
+    <string name="sort_size_desc">体积大优先</string>
 </resources>

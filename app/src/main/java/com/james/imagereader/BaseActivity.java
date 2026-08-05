@@ -61,6 +61,14 @@ public class BaseActivity extends AppCompatActivity {
         getSharedPreferences("records", Context.MODE_PRIVATE).edit().putInt(key, value).apply();
     }
 
+    protected long loadLongData(String key) {
+        return getSharedPreferences("records", Context.MODE_PRIVATE).getLong(key, 0L);
+    }
+
+    protected void saveLongData(String key, long value) {
+        getSharedPreferences("records", Context.MODE_PRIVATE).edit().putLong(key, value).apply();
+    }
+
     @SuppressLint("HandlerLeak")
     protected Handler mHandler = new Handler() {
         @Override

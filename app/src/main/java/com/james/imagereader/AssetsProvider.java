@@ -10,6 +10,7 @@ import android.text.TextUtils;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -114,7 +115,10 @@ public class AssetsProvider {
     private Map<String, Integer> tabTypes = new HashMap<>();
 
     public synchronized List<AssetInfo> getAssetsInfoFromDB(String type) {
-        List<PackageInfo> packageInfoList = mContext.getPackageManager().getInstalledPackages(0);
+        return getAssetsInfoFromDB(type, AssetSortType.NAME_ASC);
+    }
+
+    public synchronized List<AssetInfo> getAssetsInfoFromDB(String type, AssetSortType sortType) {
         List<AssetInfo> assetInfos = new ArrayList<>();
         tabTypes = new HashMap<>();
         String selection = DatabaseHelper.COLUMN_PACKAGE_NAME + " LIKE ?";
@@ -141,13 +145,19 @@ public class AssetsProvider {
                     int imageCount = mCursor.getInt(mCursor.getColumnIndexOrThrow(DatabaseHelper.COLUMN_IMAGE_COUNT));
                     int favorite = mCursor.getInt(mCursor.getColumnIndexOrThrow(DatabaseHelper.COLUMN_FAVORITE));
                     AssetInfo assetInfo = new AssetInfo(packageName, packageSize, displayName, imageCount, favorite == 1, progress, offset);
+                    assetInfo.setLastReadTime(mContext.loadLongData(getLastReadTimeKey(packageName)));
                     assetInfos.add(assetInfo);
                 }
                 tabTypes.merge(mType, 1, Integer::sum);
             } while (mCursor.moveToNext());
             mCursor.close();
         }
+        Collections.sort(assetInfos, sortType.getComparator());
         return assetInfos;
+    }
+
+    public static String getLastReadTimeKey(String packageName) {
+        return "lastReadTime." + packageName;
     }
 
     public void deleteItemIfNotExist() {

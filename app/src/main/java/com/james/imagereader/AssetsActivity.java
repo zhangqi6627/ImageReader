@@ -6,6 +6,9 @@ import android.os.Message;
 import android.support.design.widget.TabLayout;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.view.ViewPager;
+import android.view.View;
+import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
 
 import java.io.File;
 import java.util.HashMap;
@@ -44,6 +47,9 @@ public class AssetsActivity extends BaseActivity {
     private final static String TAG = "AlbumsActivity";
     private ViewPager viewPager;
     private TabsAdapter tabsAdapter;
+    private AssetSortType sortType = AssetSortType.NAME_ASC;
+    private SortSpinner spinnerSort;
+    private ArrayAdapter<String> sortAdapter;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -56,8 +62,11 @@ public class AssetsActivity extends BaseActivity {
         viewPager = (ViewPager) findViewById(R.id.view_pager);
         TabLayout tabLayout = (TabLayout) findViewById(R.id.tab_layout);
         tabLayout.setTabGravity(TabLayout.GRAVITY_CENTER);
+        sortType = AssetSortType.fromPosition(loadData("assetSortType"));
         tabsAdapter = new TabsAdapter(this, getSupportFragmentManager(), new HashMap<>());
+        tabsAdapter.setSortType(sortType);
         viewPager.setAdapter(tabsAdapter);
+        initSortSpinner();
         tabLayout.setupWithViewPager(viewPager);
         tabLayout.setOnTabSelectedListener(new TabLayout.OnTabSelectedListener() {
             @Override
@@ -73,6 +82,66 @@ public class AssetsActivity extends BaseActivity {
             public void onTabReselected(TabLayout.Tab tab) {
             }
         });
+    }
+
+    private void initSortSpinner() {
+        spinnerSort = (SortSpinner) findViewById(R.id.spinner_sort);
+        sortAdapter = new ArrayAdapter<>(this, android.R.layout.simple_spinner_item, getSortOptionLabels());
+        sortAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        spinnerSort.setAdapter(sortAdapter);
+        spinnerSort.setSelection(sortType.getGroupPosition());
+        spinnerSort.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                applySortGroup(AssetSortType.groupFromPosition(position));
+            }
+
+            @Override
+            public void onNothingSelected(AdapterView<?> parent) {
+            }
+        });
+    }
+
+    private void applySortGroup(AssetSortType.SortGroup group) {
+        if (sortType.getGroup() == group) {
+            sortType = sortType.toggleDirection();
+        } else {
+            sortType = AssetSortType.getDefaultType(group);
+        }
+        tabsAdapter.setSortType(sortType);
+        saveData("assetSortType", sortType.ordinal());
+        updateSortSpinner();
+        refreshFragmentsBySort();
+    }
+
+    private List<String> getSortOptionLabels() {
+        List<String> labels = new java.util.ArrayList<>();
+        labels.add(sortType.getGroup() == AssetSortType.SortGroup.NAME
+                ? getString(sortType.isAscending() ? R.string.sort_name_asc : R.string.sort_name_desc)
+                : getString(R.string.sort_name));
+        labels.add(sortType.getGroup() == AssetSortType.SortGroup.IMAGE_COUNT
+                ? getString(sortType.isAscending() ? R.string.sort_image_count_asc : R.string.sort_image_count_desc)
+                : getString(R.string.sort_image_count));
+        labels.add(sortType.getGroup() == AssetSortType.SortGroup.SIZE
+                ? getString(sortType.isAscending() ? R.string.sort_size_asc : R.string.sort_size_desc)
+                : getString(R.string.sort_size));
+        return labels;
+    }
+
+    private void updateSortSpinner() {
+        sortAdapter.clear();
+        sortAdapter.addAll(getSortOptionLabels());
+        sortAdapter.notifyDataSetChanged();
+        if (spinnerSort.getSelectedItemPosition() != sortType.getGroupPosition()) {
+            spinnerSort.setSelection(sortType.getGroupPosition());
+        }
+    }
+
+    private void refreshFragmentsBySort() {
+        if (tabsAdapter == null) {
+            return;
+        }
+        tabsAdapter.notifyDataSetChanged();
     }
 
     @Override

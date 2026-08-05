@@ -35,6 +35,7 @@ public class AssetsFragment extends Fragment {
     private BaseActivity mActivity;
     private LinearLayoutManager layoutManager;
     private String type;
+    private AssetSortType sortType = AssetSortType.NAME_ASC;
 
     @Nullable
     @Override
@@ -47,6 +48,7 @@ public class AssetsFragment extends Fragment {
         rv_albums.addItemDecoration(new DividerItemDecoration(mActivity, DividerItemDecoration.VERTICAL));
         assert getArguments() != null;
         type = getArguments().getString("type");
+        sortType = AssetSortType.fromPosition(getArguments().getInt("sortType", AssetSortType.NAME_ASC.ordinal()));
         layoutManager = new LinearLayoutManager(mActivity);
         layoutManager.setOrientation(RecyclerView.VERTICAL);
         rv_albums.setLayoutManager(layoutManager);
@@ -63,15 +65,23 @@ public class AssetsFragment extends Fragment {
             }
         });
 
+        reload(sortType, false);
+        return fragmentView;
+    }
+
+    public void reload(AssetSortType sortType) {
+        reload(sortType, true);
+    }
+
+    private void reload(AssetSortType sortType, final boolean scrollToTop) {
+        this.sortType = sortType;
         new Thread(new Runnable() {
             @Override
             public void run() {
-                assetInfos = AssetsProvider.getInstance(mActivity).getAssetsInfoFromDB(type);
-                //AssetsProvider.getInstance(mActivity).getTabTypes().put(type, assetInfos.size());
-                mHandler.sendEmptyMessage(0);
+                assetInfos = AssetsProvider.getInstance(mActivity).getAssetsInfoFromDB(type, AssetsFragment.this.sortType);
+                mHandler.sendMessage(mHandler.obtainMessage(0, scrollToTop ? 1 : 0, 0));
             }
         }).start();
-        return fragmentView;
     }
 
     private void scanAssetsInfo() {
@@ -100,9 +110,13 @@ public class AssetsFragment extends Fragment {
             switch (msg.what) {
                 case 0:
                     albumsAdapter.notifyDataSetChanged();
-                    int position = mActivity.loadData(type + ".position");
-                    int offset = mActivity.loadData(type + ".offset");
-                    layoutManager.scrollToPositionWithOffset(position, offset);
+                    if (msg.arg1 == 1) {
+                        layoutManager.scrollToPositionWithOffset(0, 0);
+                    } else {
+                        int position = mActivity.loadData(type + ".position");
+                        int offset = mActivity.loadData(type + ".offset");
+                        layoutManager.scrollToPositionWithOffset(position, offset);
+                    }
                     break;
                 case 1:
 
@@ -127,9 +141,7 @@ public class AssetsFragment extends Fragment {
                     albumsAdapter.notifyItemRemoved(albumIndex);
                     return;
                 }
-                AssetInfo assetInfo = assetInfos.get(albumIndex);
-                assetInfos.set(albumIndex, mActivity.getDBHelper().getAssetInfo(assetInfo.getPackageName()));
-                albumsAdapter.notifyItemChanged(albumIndex);
+                reload(sortType);
             }
         }
     }
