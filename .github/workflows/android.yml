@@ -58,8 +58,12 @@ jobs:
         id: release_info
         run: |
           SHORT_SHA="${GITHUB_SHA::7}"
-          VERSION_NAME="$(grep -oP 'versionName\\s+"\\K[^"]+' app/build.gradle)"
-          VERSION_CODE="$(grep -oP 'versionCode\\s+\\K[0-9]+' app/build.gradle)"
+          VERSION_NAME="$(sed -nE 's/^[[:space:]]*versionName[[:space:]]+"([^"]+)".*/\1/p' app/build.gradle | head -n 1)"
+          VERSION_CODE="$(sed -nE 's/^[[:space:]]*versionCode[[:space:]]+([0-9]+).*/\1/p' app/build.gradle | head -n 1)"
+          if [ -z "$VERSION_NAME" ] || [ -z "$VERSION_CODE" ]; then
+            echo "Failed to read versionName/versionCode from app/build.gradle"
+            exit 1
+          fi
           TAG_NAME="v${VERSION_NAME}-vc${VERSION_CODE}-build${GITHUB_RUN_NUMBER}-${SHORT_SHA}"
           APK_SOURCE="app/build/outputs/apk/release/app-release.apk"
           APK_NAME="ImageReader-${TAG_NAME}.apk"
