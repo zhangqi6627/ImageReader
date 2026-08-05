@@ -26,7 +26,14 @@ jobs:
         uses: gradle/actions/setup-gradle@v4
 
       - name: Install Android native build tools
-        run: yes | sdkmanager "cmake;3.22.1"
+        run: |
+          SDK_ROOT="${ANDROID_HOME:-${ANDROID_SDK_ROOT:-/usr/local/lib/android/sdk}}"
+          SDKMANAGER="$(find "$SDK_ROOT" -path "*/cmdline-tools/*/bin/sdkmanager" -print -quit)"
+          if [ -z "$SDKMANAGER" ]; then
+            echo "sdkmanager not found under $SDK_ROOT"
+            exit 1
+          fi
+          yes | "$SDKMANAGER" "cmake;3.22.1"
 
       - name: Prepare signing config
         env:
