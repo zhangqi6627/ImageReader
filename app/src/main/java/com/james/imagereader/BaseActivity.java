@@ -9,6 +9,7 @@ import android.content.pm.PackageManager;
 import android.content.res.AssetManager;
 import android.content.res.Resources;
 import android.net.Uri;
+import android.net.VpnService;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.Handler;
@@ -18,7 +19,10 @@ import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
+import android.view.View;
 import android.view.WindowManager;
+import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.Toast;
 
 import java.io.File;
@@ -83,6 +87,10 @@ public class BaseActivity extends AppCompatActivity {
             intent.setData(Uri.parse("package:" + this.getPackageName()));
             startActivityForResult(intent, 3);
         }
+        LinearLayout.LayoutParams params;
+        //params.
+        View view;
+        //view.setX();
     }
 
     @Override
@@ -187,6 +195,7 @@ public class BaseActivity extends AppCompatActivity {
         if (nameOrPath.endsWith(".apk")) {
             mPackageName = getPackageName(nameOrPath);
         }
+
         return mResources.getString(mResources.getIdentifier(idName, "string", mPackageName));
     }
 

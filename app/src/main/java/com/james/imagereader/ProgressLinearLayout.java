@@ -37,12 +37,8 @@ public class ProgressLinearLayout extends LinearLayout {
         super.onDraw(canvas);
         if (mPaint == null) {
             mPaint = new Paint();
-            mPaint.setColor(0xffD8ECE9);
-            //mPaint.setColor(0xffFCD25C);
             mPaint.setColor(0xff9CC576);
         }
-        int width = canvas.getWidth();
-        int height = canvas.getHeight();
-        canvas.drawRect(0,0, (float) (width * mProgress) / mProgressMax, height, mPaint);
+        canvas.drawRect(0,0, (float) (getWidth() * mProgress) / mProgressMax, getHeight(), mPaint);
     }
 }

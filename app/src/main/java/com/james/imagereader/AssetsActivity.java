@@ -21,7 +21,7 @@ import java.util.List;
  *  #05.根据名称排序
  *  #06.如何去掉已经被卸载的apk?
  *  #07.自定义View显示进度条
- *  08.添加Text功能
+ *  #08.添加Text功能
  *  09.添加 fress/reading/done 页面
  *  10.添加分享功能，生成海报
  *  11.添加开屏动画
@@ -30,7 +30,7 @@ import java.util.List;
  *  14.添加广告？寻找广告合作商
  *  15.添加视频播放功能
  *  16.添加横屏功能
- *  17.添加图片处理滤镜功能
+ *  #17.添加图片处理滤镜功能
  *  18.在保护页上添加 TG/FB/X/Tiktok 等链接
  *  19.添加积分功能
  *  20.添加OTA升级功能
@@ -91,7 +91,6 @@ public class AssetsActivity extends BaseActivity {
         int savedFileCount = loadData("fileCount");
         File[] apkFiles = getAssetsApkFiles();
         int realFileCount = apkFiles.length;
-        Log.e("zq8888", Thread.currentThread().getStackTrace()[2].getClassName()+"-->"+Thread.currentThread().getStackTrace()[2].getMethodName()+"()-->"+Thread.currentThread().getStackTrace()[2].getLineNumber()+" realFileCount:" + realFileCount);
 
         if (savedFileCount != realFileCount) {
             showToast("检测到文件夹有变化，开始扫描");
