@@ -11,7 +11,7 @@ import android.text.TextUtils;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -48,7 +48,6 @@ public class AssetsProvider {
 
     public List<AssetInfo> getAssetsInfoFromStorage() {
         List<AssetInfo> assetInfos = new ArrayList<>();
-        HashMap<String, Integer> tabTypes = new HashMap<>();
         File[] apkFiles = mContext.getAssetsApkFiles();
         if (apkFiles == null || apkFiles.length == 0) {
             return null;
@@ -62,10 +61,8 @@ public class AssetsProvider {
             AssetInfo assetInfo = new AssetInfo(pkgName, pkgSize, apkFilePath, imageCount);
             assetInfo.setDisplayName(apkFilePath);
             assetInfos.add(assetInfo);
-            String typeName = pkgName.split("\\.")[3];
-            tabTypes.merge(typeName, 1, Integer::sum);
             try {
-                mDatabase.insert(DatabaseHelper.TABLE_NAME, null, assetInfo.getContentValues());
+                mDatabase.replaceOrThrow(DatabaseHelper.TABLE_NAME, null, assetInfo.getContentValues());
             } catch (SQLException e) {
                 e.printStackTrace();
             }
@@ -77,7 +74,6 @@ public class AssetsProvider {
     public List<AssetInfo> getAssetsInfoFromInstalledPackage() {
         List<PackageInfo> packageInfoList = mContext.getPackageManager().getInstalledPackages(0);
         List<AssetInfo> assetInfos = new ArrayList<>();
-        tabTypes = new HashMap<>();
         SQLiteDatabase mDatabase = mDatabaseHelper.getWritableDatabase();
         mDatabase.beginTransaction();
         for (PackageInfo packageInfo : packageInfoList) {
@@ -91,8 +87,6 @@ public class AssetsProvider {
                 int imageCount = mContext.getAssetInt(pkgName, "image_count");
                 AssetInfo assetInfo = new AssetInfo(pkgName, pkgSize, displayName, imageCount);
                 assetInfos.add(assetInfo);
-                String typeName = pkgName.split("\\.")[3];
-                tabTypes.merge(typeName, 1, Integer::sum);
                 try {
                     int updateResult = mDatabase.update(DatabaseHelper.TABLE_NAME, assetInfo.getContentValues(), "packageName=?", new String[]{assetInfo.getPackageName()});
                     if (updateResult <= 0) {
@@ -109,10 +103,8 @@ public class AssetsProvider {
     }
 
     public Map<String, Integer> getTabTypes() {
-        return tabTypes;
+        return getTabTypesFromDB();
     }
-
-    private Map<String, Integer> tabTypes = new HashMap<>();
 
     public synchronized List<AssetInfo> getAssetsInfoFromDB(String type) {
         return getAssetsInfoFromDB(type, AssetSortType.NAME_ASC);
@@ -120,7 +112,6 @@ public class AssetsProvider {
 
     public synchronized List<AssetInfo> getAssetsInfoFromDB(String type, AssetSortType sortType) {
         List<AssetInfo> assetInfos = new ArrayList<>();
-        tabTypes = new HashMap<>();
         String selection = DatabaseHelper.COLUMN_PACKAGE_NAME + " LIKE ?";
         String[] selectionArgs = new String[]{"%" + type + "%"};
         if (TextUtils.isEmpty(type)) {
@@ -128,32 +119,87 @@ public class AssetsProvider {
             selectionArgs = null;
         }
         Cursor mCursor = mDatabaseHelper.getReadableDatabase().query(DatabaseHelper.TABLE_NAME, DatabaseHelper.COLUMNS, selection, selectionArgs, null, null, DatabaseHelper.COLUMN_DISPLAY_NAME);
-        if (mCursor != null && mCursor.moveToFirst()) {
-            do {
-                String packageName = mCursor.getString(mCursor.getColumnIndexOrThrow(DatabaseHelper.COLUMN_PACKAGE_NAME));
-                String mType = packageName.split("\\.")[3];
-                if (selection == null || packageName.contains("com.golds.assets." + type + ".")) {
-                    String displayName = mCursor.getString(mCursor.getColumnIndexOrThrow(DatabaseHelper.COLUMN_DISPLAY_NAME));
+        if (mCursor != null) {
+            try {
+                if (mCursor.moveToFirst()) {
+                    do {
+                        String packageName = mCursor.getString(mCursor.getColumnIndexOrThrow(DatabaseHelper.COLUMN_PACKAGE_NAME));
+                        if (selection == null || isAssetPackageOfType(packageName, type)) {
+                            String displayName = mCursor.getString(mCursor.getColumnIndexOrThrow(DatabaseHelper.COLUMN_DISPLAY_NAME));
 
-                    if (!new File(displayName).exists()) {
-                        continue;
-                    }
-                    LogUtils.e(TAG, Thread.currentThread().getStackTrace()[2].getClassName()+"-->"+Thread.currentThread().getStackTrace()[2].getMethodName()+"()-->"+Thread.currentThread().getStackTrace()[2].getLineNumber() + " displayName: " + displayName);
-                    long packageSize = mCursor.getLong(mCursor.getColumnIndexOrThrow(DatabaseHelper.COLUMN_PACKAGE_SIZE));
-                    int progress = mCursor.getInt(mCursor.getColumnIndexOrThrow(DatabaseHelper.COLUMN_PROGRESS));
-                    int offset = mCursor.getInt(mCursor.getColumnIndexOrThrow(DatabaseHelper.COLUMN_OFFSET));
-                    int imageCount = mCursor.getInt(mCursor.getColumnIndexOrThrow(DatabaseHelper.COLUMN_IMAGE_COUNT));
-                    int favorite = mCursor.getInt(mCursor.getColumnIndexOrThrow(DatabaseHelper.COLUMN_FAVORITE));
-                    AssetInfo assetInfo = new AssetInfo(packageName, packageSize, displayName, imageCount, favorite == 1, progress, offset);
-                    assetInfo.setLastReadTime(mContext.loadLongData(getLastReadTimeKey(packageName)));
-                    assetInfos.add(assetInfo);
+                            if (!new File(displayName).exists()) {
+                                continue;
+                            }
+                            LogUtils.e(TAG, Thread.currentThread().getStackTrace()[2].getClassName()+"-->"+Thread.currentThread().getStackTrace()[2].getMethodName()+"()-->"+Thread.currentThread().getStackTrace()[2].getLineNumber() + " displayName: " + displayName);
+                            long packageSize = mCursor.getLong(mCursor.getColumnIndexOrThrow(DatabaseHelper.COLUMN_PACKAGE_SIZE));
+                            int progress = mCursor.getInt(mCursor.getColumnIndexOrThrow(DatabaseHelper.COLUMN_PROGRESS));
+                            int offset = mCursor.getInt(mCursor.getColumnIndexOrThrow(DatabaseHelper.COLUMN_OFFSET));
+                            int imageCount = mCursor.getInt(mCursor.getColumnIndexOrThrow(DatabaseHelper.COLUMN_IMAGE_COUNT));
+                            int favorite = mCursor.getInt(mCursor.getColumnIndexOrThrow(DatabaseHelper.COLUMN_FAVORITE));
+                            AssetInfo assetInfo = new AssetInfo(packageName, packageSize, displayName, imageCount, favorite == 1, progress, offset);
+                            assetInfo.setLastReadTime(mContext.loadLongData(getLastReadTimeKey(packageName)));
+                            assetInfos.add(assetInfo);
+                        }
+                    } while (mCursor.moveToNext());
                 }
-                tabTypes.merge(mType, 1, Integer::sum);
-            } while (mCursor.moveToNext());
-            mCursor.close();
+            } finally {
+                mCursor.close();
+            }
         }
         Collections.sort(assetInfos, sortType.getComparator());
         return assetInfos;
+    }
+
+    public synchronized Map<String, Integer> getTabTypesFromDB() {
+        Map<String, Integer> result = new LinkedHashMap<>();
+        Cursor cursor = mDatabaseHelper.getReadableDatabase().query(
+                DatabaseHelper.TABLE_NAME,
+                DatabaseHelper.COLUMNS,
+                null,
+                null,
+                null,
+                null,
+                DatabaseHelper.COLUMN_PACKAGE_NAME);
+        if (cursor != null) {
+            try {
+                if (cursor.moveToFirst()) {
+                    do {
+                        String packageName = cursor.getString(cursor.getColumnIndexOrThrow(DatabaseHelper.COLUMN_PACKAGE_NAME));
+                        String typeName = getTypeFromPackageName(packageName);
+                        if (typeName == null) {
+                            continue;
+                        }
+                        String displayName = cursor.getString(cursor.getColumnIndexOrThrow(DatabaseHelper.COLUMN_DISPLAY_NAME));
+                        if (!new File(displayName).exists()) {
+                            continue;
+                        }
+                        result.merge(typeName, 1, Integer::sum);
+                    } while (cursor.moveToNext());
+                }
+            } finally {
+                cursor.close();
+            }
+        }
+        return result;
+    }
+
+    private boolean isAssetPackageOfType(String packageName, String type) {
+        if (TextUtils.isEmpty(type)) {
+            return true;
+        }
+        String typeName = getTypeFromPackageName(packageName);
+        return type.equals(typeName);
+    }
+
+    private String getTypeFromPackageName(String packageName) {
+        if (TextUtils.isEmpty(packageName) || !packageName.startsWith("com.golds.assets.")) {
+            return null;
+        }
+        String[] nameParts = packageName.split("\\.");
+        if (nameParts.length <= 3) {
+            return null;
+        }
+        return nameParts[3];
     }
 
     public static String getLastReadTimeKey(String packageName) {

@@ -9,7 +9,7 @@ import android.support.v4.view.ViewPager;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
-import android.widget.Button;
+import android.widget.ImageButton;
 
 import java.io.File;
 import java.util.HashMap;
@@ -52,7 +52,7 @@ public class AssetsActivity extends BaseActivity {
     private AssetDisplayMode displayMode = AssetDisplayMode.LIST;
     private SortSpinner spinnerSort;
     private ArrayAdapter<String> sortAdapter;
-    private Button btnDisplayMode;
+    private ImageButton btnDisplayMode;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -144,7 +144,7 @@ public class AssetsActivity extends BaseActivity {
     }
 
     private void initDisplayModeButton() {
-        btnDisplayMode = (Button) findViewById(R.id.btn_display_mode);
+        btnDisplayMode = (ImageButton) findViewById(R.id.btn_display_mode);
         updateDisplayModeButton();
         btnDisplayMode.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -159,9 +159,11 @@ public class AssetsActivity extends BaseActivity {
     }
 
     private void updateDisplayModeButton() {
-        btnDisplayMode.setText(displayMode == AssetDisplayMode.LIST
-                ? getString(R.string.display_mode_list)
-                : getString(R.string.display_mode_grid));
+        boolean isListMode = displayMode == AssetDisplayMode.LIST;
+        btnDisplayMode.setImageResource(isListMode ? R.drawable.ic_view_list : R.drawable.ic_view_grid);
+        btnDisplayMode.setContentDescription(getString(isListMode
+                ? R.string.display_mode_list
+                : R.string.display_mode_grid));
     }
 
     private void refreshFragmentsByDisplayMode() {

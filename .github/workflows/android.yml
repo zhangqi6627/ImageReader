@@ -1,63 +1,74 @@
-name: Android CI
+name: Android Build And Release
 
 on:
   push:
-    tags:
-      - '*'
-  pull_request:
-    branches: [ "master" ]
+  workflow_dispatch:
+
+permissions:
+  contents: write
 
 jobs:
-  build:
-
+  on-push-release:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v4
-    - name: set up JDK 17
-      uses: actions/setup-java@v3
-      with:
-        java-version: '17'
-        distribution: 'temurin'
-        cache: gradle
-    # gradlew 改权限
-    - name: Grant execute permission for gradlew
-      run: chmod +x gradlew
-    # 打包成apk
-    - name: Build with Gradle
-      env:
-        PASSWORD: ${{ secrets.PASSWORD }}
-      run: |
-        sed -i "1s/123/$PASSWORD/" keystore.properties
-        sed -i "2s/123/$PASSWORD/" keystore.properties
-        ./gradlew assembleRelease
-    # 上传apk
-    - name: Upload APK
-      uses: actions/upload-artifact@v2
-      with:
-        name: app
-        path: app/build/outputs/apk/release/app-release.apk
-    # 创建realease
-    - name: Create Release
-      id: create_release
-      uses: actions/create-release@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        tag_name: ${{ github.ref }}
-        release_name: Release ${{ github.ref }}
-        draft: false
-        prerelease: false
-    # 上传apk到release
-    - name: Upload Release Asset
-      id: upload-release-asset
-      uses: actions/upload-release-asset@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        # This pulls from the CREATE RELEASE step above, referencing it's ID to get its outputs object, which include a `upload_url`.
-        # See this blog post for more info: https://jasonet.co/posts/new-features-of-github-actions/#passing-data-to-future-steps
-        upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: app/build/outputs/apk/release/app-release.apk
-        asset_name: ImageReader.apk
-        asset_content_type: application/vnd.android.package-archiv
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: gradle
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Install Android native build tools
+        run: yes | sdkmanager "cmake;3.22.1"
+
+      - name: Prepare signing config
+        env:
+          KEYSTORE_PASSWORD: ${{ secrets.PASSWORD }}
+        run: |
+          if [ -z "$KEYSTORE_PASSWORD" ]; then
+            echo "Repository secret PASSWORD is required to sign the release APK."
+            exit 1
+          fi
+          if [ -n "$KEYSTORE_PASSWORD" ]; then
+            sed -i "s/^storePassword=.*/storePassword=$KEYSTORE_PASSWORD/" keystore.properties
+            sed -i "s/^keyPassword=.*/keyPassword=$KEYSTORE_PASSWORD/" keystore.properties
+          fi
+
+      - name: Grant execute permission for Gradle
+        run: chmod +x gradlew
+
+      - name: Build release APK
+        run: ./gradlew :app:assembleRelease --no-daemon
+
+      - name: Prepare release metadata
+        id: release_info
+        run: |
+          SHORT_SHA="${GITHUB_SHA::7}"
+          TAG_NAME="build-${GITHUB_RUN_NUMBER}-${SHORT_SHA}"
+          APK_SOURCE="app/build/outputs/apk/release/app-release.apk"
+          APK_NAME="ImageReader-${TAG_NAME}.apk"
+          cp "$APK_SOURCE" "$APK_NAME"
+          echo "tag_name=$TAG_NAME" >> "$GITHUB_OUTPUT"
+          echo "apk_name=$APK_NAME" >> "$GITHUB_OUTPUT"
+
+      - name: Publish public release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG_NAME: ${{ steps.release_info.outputs.tag_name }}
+          APK_NAME: ${{ steps.release_info.outputs.apk_name }}
+        run: |
+          if gh release view "$TAG_NAME" >/dev/null 2>&1; then
+            gh release upload "$TAG_NAME" "$APK_NAME" --clobber
+          else
+            gh release create "$TAG_NAME" "$APK_NAME" \
+              --target "$GITHUB_SHA" \
+              --title "ImageReader $TAG_NAME" \
+              --notes "Automated release for commit $GITHUB_SHA."
+          fi

@@ -94,10 +94,6 @@ public class BaseActivity extends AppCompatActivity {
             intent.setData(Uri.parse("package:" + this.getPackageName()));
             startActivityForResult(intent, 3);
         }
-        LinearLayout.LayoutParams params;
-        //params.
-        View view;
-        //view.setX();
     }
 
     @Override
@@ -139,6 +135,7 @@ public class BaseActivity extends AppCompatActivity {
         }
         String dexPath = null;
         try {
+            assert nameOrPath != null;
             ApplicationInfo applicationInfo = getPackageManager().getApplicationInfo(nameOrPath, 0);
             dexPath = applicationInfo.sourceDir;
         } catch (PackageManager.NameNotFoundException e) {
@@ -150,18 +147,19 @@ public class BaseActivity extends AppCompatActivity {
     protected void log(String msg) {
         LogUtils.e(TAG, Thread.currentThread().getStackTrace()[2].getClassName() + "-->" + Thread.currentThread().getStackTrace()[2].getMethodName() + "()-->" + Thread.currentThread().getStackTrace()[2].getLineNumber() + "msg: " + msg);
     }
-    protected String imageReaderPath = Environment.getExternalStorageDirectory().getAbsolutePath() + File.separator + "0000ImageReader";
+    protected String imageReaderPath = Environment.getExternalStorageDirectory().getAbsolutePath() + File.separator + "0ImageCool";
 
     protected File[] getAssetsApkFiles() {
         File imageReaderFolder = new File(imageReaderPath);
         if (!imageReaderFolder.exists() && imageReaderFolder.mkdir()) {
             LogUtils.e(TAG, "mkdir success");
         }
+        assetsApkFiles.clear();
         scanAssetsFiles(imageReaderFolder);
         return assetsApkFiles.toArray(new File[]{});
     }
 
-    private Set<File> assetsApkFiles = new HashSet<>();
+    private final Set<File> assetsApkFiles = new HashSet<>();
 
     protected void scanAssetsFiles(File file) {
         for (File subFile : file.listFiles()) {
@@ -190,10 +188,6 @@ public class BaseActivity extends AppCompatActivity {
         intent.setAction(Intent.ACTION_DELETE);//设置action为卸载已安装的包
         intent.setData(Uri.parse("package:" + packageName));//设置
         startActivityForResult(intent, 102);
-    }
-
-    protected long getPackageSize(String nameOrPath) {
-        return new File(getApkPath(nameOrPath)).length();
     }
 
     protected String getAssetString(String nameOrPath, String idName) {
