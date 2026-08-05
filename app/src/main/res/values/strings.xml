@@ -26,4 +26,5 @@
     <string name="upgrade_download_progress">Downloading: %1$d%%</string>
     <string name="upgrade_download_done">Download complete. Opening installer...</string>
     <string name="upgrade_download_failed">Download failed. Please try again.</string>
+    <string name="upgrade_install_permission_required">Please allow this app to install unknown apps, then return to continue installation.</string>
 </resources>

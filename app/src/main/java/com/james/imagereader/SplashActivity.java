@@ -4,9 +4,11 @@ import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.Intent;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
+import android.provider.Settings;
 import android.support.v4.content.FileProvider;
 import android.text.TextUtils;
 import android.view.View;
@@ -32,6 +34,7 @@ public class SplashActivity extends Activity {
     private AlertDialog upgradeDialog;
     private ProgressBar upgradeProgressBar;
     private TextView upgradeProgressText;
+    private File downloadedApkFile;
     private UpgradeChecker.ReleaseInfo pendingReleaseInfo;
     private View logoContainer;
     private View adContainer;
@@ -216,9 +219,9 @@ public class SplashActivity extends Activity {
 
             @Override
             public void onSuccess(File apkFile) {
+                downloadedApkFile = apkFile;
                 upgradeProgressText.setText(R.string.upgrade_download_done);
                 installApk(apkFile);
-                openHome();
             }
 
             @Override
@@ -232,11 +235,40 @@ public class SplashActivity extends Activity {
     }
 
     private void installApk(File apkFile) {
+        if (!canInstallPackages()) {
+            downloadedApkFile = apkFile;
+            openInstallPermissionSettings();
+            return;
+        }
         Uri apkUri = FileProvider.getUriForFile(this, getPackageName() + ".fileprovider", apkFile);
         Intent intent = new Intent(Intent.ACTION_VIEW);
         intent.setDataAndType(apkUri, "application/vnd.android.package-archive");
         intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
         intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
         startActivity(intent);
+        if (upgradeDialog != null && upgradeDialog.isShowing()) {
+            upgradeDialog.dismiss();
+        }
+        finish();
+    }
+
+    private boolean canInstallPackages() {
+        return Build.VERSION.SDK_INT < Build.VERSION_CODES.O || getPackageManager().canRequestPackageInstalls();
+    }
+
+    private void openInstallPermissionSettings() {
+        upgradeProgressText.setVisibility(View.VISIBLE);
+        upgradeProgressText.setText(R.string.upgrade_install_permission_required);
+        Intent intent = new Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES);
+        intent.setData(Uri.parse("package:" + getPackageName()));
+        startActivity(intent);
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        if (downloadedApkFile != null && downloadedApkFile.exists() && canInstallPackages()) {
+            installApk(downloadedApkFile);
+        }
     }
 }

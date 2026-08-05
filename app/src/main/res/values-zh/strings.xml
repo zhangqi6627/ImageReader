@@ -26,4 +26,5 @@
     <string name="upgrade_download_progress">正在下载：%1$d%%</string>
     <string name="upgrade_download_done">下载完成，正在打开安装器...</string>
     <string name="upgrade_download_failed">下载失败，请重试。</string>
+    <string name="upgrade_install_permission_required">请允许本应用安装未知应用，然后返回继续安装。</string>
 </resources>
