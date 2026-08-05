@@ -8,47 +8,64 @@
     android:fitsSystemWindows="true"
     android:orientation="vertical"
     tools:context="com.james.imagereader.AssetsActivity">
-	    <android.support.design.widget.TabLayout
-	        android:id="@+id/tab_layout"
-	        android:layout_width="match_parent"
+
+    <android.support.design.widget.TabLayout
+        android:id="@+id/tab_layout"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:background="@android:color/holo_orange_light"
         app:tabGravity="fill"
         app:tabIndicatorColor="@color/colorAccent"
         app:tabIndicatorHeight="2dp"
-	        app:tabMode="scrollable"
-	        app:tabSelectedTextColor="@color/colorAccent"
-	        app:tabTextColor="@android:color/black" />
+        app:tabMode="scrollable"
+        app:tabSelectedTextColor="@color/colorAccent"
+        app:tabTextColor="@android:color/black" />
 
-	    <LinearLayout
-	        android:id="@+id/layout_sort_bar"
-	        android:layout_width="match_parent"
-	        android:layout_height="44dp"
-	        android:gravity="center_vertical"
-	        android:orientation="horizontal"
-	        android:paddingLeft="12dp"
-			android:visibility="gone"
-	        android:paddingRight="12dp">
-
-	        <TextView
-	            android:layout_width="wrap_content"
-	            android:layout_height="wrap_content"
-	            android:text="@string/sort_label"
-				android:visibility="gone"
-	            android:textColor="@android:color/black"
-	            android:textSize="14sp" />
-
-	        <com.james.imagereader.SortSpinner
-	            android:id="@+id/spinner_sort"
-	            android:layout_width="wrap_content"
-	            android:layout_height="wrap_content"
-				android:layout_gravity="end"
-	            android:layout_marginLeft="8dp" />
-	    </LinearLayout>
-
-	    <android.support.v4.view.ViewPager
-	        android:id="@+id/view_pager"
+    <LinearLayout
+        android:id="@+id/layout_sort_bar"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"/>
+        android:layout_height="44dp"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingLeft="12dp"
+        android:paddingRight="12dp">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/sort_label"
+            android:textColor="@android:color/black"
+            android:textSize="14sp" />
+
+        <com.james.imagereader.SortSpinner
+            android:id="@+id/spinner_sort"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginLeft="8dp" />
+
+        <View
+            android:layout_width="0dp"
+            android:layout_height="1dp"
+            android:layout_weight="1" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/display_mode_label"
+            android:textColor="@android:color/black"
+            android:textSize="14sp" />
+
+        <Button
+            android:id="@+id/btn_display_mode"
+            android:layout_width="72dp"
+            android:layout_height="36dp"
+            android:layout_marginLeft="8dp" />
+    </LinearLayout>
+
+    <android.support.v4.view.ViewPager
+        android:id="@+id/view_pager"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1" />
 
 </LinearLayout>

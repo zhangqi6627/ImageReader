@@ -15,4 +15,7 @@
     <string name="sort_size">体积</string>
     <string name="sort_size_asc">体积小优先</string>
     <string name="sort_size_desc">体积大优先</string>
+    <string name="display_mode_label">显示</string>
+    <string name="display_mode_list">列表</string>
+    <string name="display_mode_grid">网格</string>
 </resources>

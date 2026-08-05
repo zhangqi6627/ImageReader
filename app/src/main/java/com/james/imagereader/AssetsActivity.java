@@ -9,6 +9,7 @@ import android.support.v4.view.ViewPager;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
+import android.widget.Button;
 
 import java.io.File;
 import java.util.HashMap;
@@ -48,8 +49,10 @@ public class AssetsActivity extends BaseActivity {
     private ViewPager viewPager;
     private TabsAdapter tabsAdapter;
     private AssetSortType sortType = AssetSortType.NAME_ASC;
+    private AssetDisplayMode displayMode = AssetDisplayMode.LIST;
     private SortSpinner spinnerSort;
     private ArrayAdapter<String> sortAdapter;
+    private Button btnDisplayMode;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -63,10 +66,13 @@ public class AssetsActivity extends BaseActivity {
         TabLayout tabLayout = (TabLayout) findViewById(R.id.tab_layout);
         tabLayout.setTabGravity(TabLayout.GRAVITY_CENTER);
         sortType = AssetSortType.fromPosition(loadData("assetSortType"));
+        displayMode = AssetDisplayMode.fromPosition(loadData("assetDisplayMode"));
         tabsAdapter = new TabsAdapter(this, getSupportFragmentManager(), new HashMap<>());
         tabsAdapter.setSortType(sortType);
+        tabsAdapter.setDisplayMode(displayMode);
         viewPager.setAdapter(tabsAdapter);
         initSortSpinner();
+        initDisplayModeButton();
         tabLayout.setupWithViewPager(viewPager);
         tabLayout.setOnTabSelectedListener(new TabLayout.OnTabSelectedListener() {
             @Override
@@ -135,6 +141,34 @@ public class AssetsActivity extends BaseActivity {
         if (spinnerSort.getSelectedItemPosition() != sortType.getGroupPosition()) {
             spinnerSort.setSelection(sortType.getGroupPosition());
         }
+    }
+
+    private void initDisplayModeButton() {
+        btnDisplayMode = (Button) findViewById(R.id.btn_display_mode);
+        updateDisplayModeButton();
+        btnDisplayMode.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                displayMode = displayMode.toggle();
+                tabsAdapter.setDisplayMode(displayMode);
+                saveData("assetDisplayMode", displayMode.ordinal());
+                updateDisplayModeButton();
+                refreshFragmentsByDisplayMode();
+            }
+        });
+    }
+
+    private void updateDisplayModeButton() {
+        btnDisplayMode.setText(displayMode == AssetDisplayMode.LIST
+                ? getString(R.string.display_mode_list)
+                : getString(R.string.display_mode_grid));
+    }
+
+    private void refreshFragmentsByDisplayMode() {
+        if (tabsAdapter == null) {
+            return;
+        }
+        tabsAdapter.notifyDataSetChanged();
     }
 
     private void refreshFragmentsBySort() {

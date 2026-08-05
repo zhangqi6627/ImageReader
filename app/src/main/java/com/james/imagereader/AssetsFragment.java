@@ -12,6 +12,7 @@ import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
 import android.support.v7.widget.DividerItemDecoration;
+import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
@@ -34,24 +35,25 @@ public class AssetsFragment extends Fragment {
     private List<AssetInfo> assetInfos = new ArrayList<>();
     private BaseActivity mActivity;
     private LinearLayoutManager layoutManager;
+    private AssetCoverLoader coverLoader;
     private String type;
     private AssetSortType sortType = AssetSortType.NAME_ASC;
+    private AssetDisplayMode displayMode = AssetDisplayMode.LIST;
 
     @Nullable
     @Override
     public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, Bundle savedInstanceState) {
-        View fragmentView = inflater.inflate(R.layout.fragment_layout, null);
+        View fragmentView = inflater.inflate(R.layout.fragment_layout, container, false);
         rv_albums = fragmentView.findViewById(R.id.rv_albums);
         if (getContext() instanceof BaseActivity) {
             mActivity = (BaseActivity) getContext();
         }
-        rv_albums.addItemDecoration(new DividerItemDecoration(mActivity, DividerItemDecoration.VERTICAL));
+        coverLoader = new AssetCoverLoader();
         assert getArguments() != null;
         type = getArguments().getString("type");
         sortType = AssetSortType.fromPosition(getArguments().getInt("sortType", AssetSortType.NAME_ASC.ordinal()));
-        layoutManager = new LinearLayoutManager(mActivity);
-        layoutManager.setOrientation(RecyclerView.VERTICAL);
-        rv_albums.setLayoutManager(layoutManager);
+        displayMode = AssetDisplayMode.fromPosition(getArguments().getInt("displayMode", AssetDisplayMode.LIST.ordinal()));
+        setupLayoutManager();
         albumsAdapter = new AlbumsAdapter();
         rv_albums.setAdapter(albumsAdapter);
 
@@ -59,7 +61,11 @@ public class AssetsFragment extends Fragment {
             @Override
             public void onScrollChange(View v, int scrollX, int scrollY, int oldScrollX, int oldScrollY) {
                 int position = layoutManager.findLastVisibleItemPosition();
-                int offset = layoutManager.findViewByPosition(position).getTop();
+                View itemView = layoutManager.findViewByPosition(position);
+                if (position == RecyclerView.NO_POSITION || itemView == null) {
+                    return;
+                }
+                int offset = itemView.getTop();
                 mActivity.saveData(type + ".position", position);
                 mActivity.saveData(type + ".offset", offset);
             }
@@ -67,6 +73,17 @@ public class AssetsFragment extends Fragment {
 
         reload(sortType, false);
         return fragmentView;
+    }
+
+    private void setupLayoutManager() {
+        if (displayMode == AssetDisplayMode.GRID) {
+            layoutManager = new GridLayoutManager(mActivity, 2);
+        } else {
+            layoutManager = new LinearLayoutManager(mActivity);
+            rv_albums.addItemDecoration(new DividerItemDecoration(mActivity, DividerItemDecoration.VERTICAL));
+        }
+        layoutManager.setOrientation(RecyclerView.VERTICAL);
+        rv_albums.setLayoutManager(layoutManager);
     }
 
     public void reload(AssetSortType sortType) {
@@ -131,6 +148,14 @@ public class AssetsFragment extends Fragment {
     public final static int REQUEST_VIEW_IMAGE = 101;
 
     @Override
+    public void onDestroyView() {
+        super.onDestroyView();
+        if (coverLoader != null) {
+            coverLoader.shutdown();
+        }
+    }
+
+    @Override
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
         if (resultCode == Activity.RESULT_OK) {
@@ -150,7 +175,8 @@ public class AssetsFragment extends Fragment {
         @NonNull
         @Override
         public AlbumsHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-            return new AlbumsHolder(View.inflate(mActivity, R.layout.item_list_album, null));
+            View itemView = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_list_album, parent, false);
+            return new AlbumsHolder(itemView);
         }
 
         @Override
@@ -183,6 +209,14 @@ public class AssetsFragment extends Fragment {
             holder.tv_progress.setText(String.valueOf(progress + "/" + imageCount));
             holder.tv_size.setText(Utils.readableFileSize(assetInfo.getPackageSize()));
             holder.ll_content.setProgress(progress, imageCount);
+            if (displayMode == AssetDisplayMode.GRID) {
+                holder.iv_album.setVisibility(View.VISIBLE);
+                coverLoader.loadCover(assetInfo.getDisplayName(), holder.iv_album);
+            } else {
+                holder.iv_album.setTag(null);
+                holder.iv_album.setImageDrawable(null);
+                holder.iv_album.setVisibility(View.GONE);
+            }
             holder.cb_fav.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
                 @Override
                 public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {

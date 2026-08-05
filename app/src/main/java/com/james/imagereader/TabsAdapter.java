@@ -18,6 +18,7 @@ public class TabsAdapter extends FragmentStatePagerAdapter {
     private String[] tabTypesArray;
     private Map<String, AssetsFragment> fragmentMap = new HashMap<>();
     private AssetSortType sortType = AssetSortType.NAME_ASC;
+    private AssetDisplayMode displayMode = AssetDisplayMode.LIST;
 
     public TabsAdapter(Context context, FragmentManager fm, Map<String, Integer> tabTypes) {
         super(fm);
@@ -31,6 +32,7 @@ public class TabsAdapter extends FragmentStatePagerAdapter {
         Bundle bundle = new Bundle();
         bundle.putString("type", tabTypesArray[i]);
         bundle.putInt("sortType", sortType.ordinal());
+        bundle.putInt("displayMode", displayMode.ordinal());
         assetsFragment.setArguments(bundle);
         fragmentMap.put(tabTypesArray[i], assetsFragment);
         return assetsFragment;
@@ -49,6 +51,11 @@ public class TabsAdapter extends FragmentStatePagerAdapter {
 
     public void setSortType(AssetSortType sortType) {
         this.sortType = sortType;
+        fragmentMap.clear();
+    }
+
+    public void setDisplayMode(AssetDisplayMode displayMode) {
+        this.displayMode = displayMode;
         fragmentMap.clear();
     }
 
