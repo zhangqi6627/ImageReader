@@ -58,18 +58,22 @@ jobs:
         id: release_info
         run: |
           SHORT_SHA="${GITHUB_SHA::7}"
-          TAG_NAME="build-${GITHUB_RUN_NUMBER}-${SHORT_SHA}"
+          VERSION_NAME="$(grep -oP 'versionName\\s+"\\K[^"]+' app/build.gradle)"
+          VERSION_CODE="$(grep -oP 'versionCode\\s+\\K[0-9]+' app/build.gradle)"
+          TAG_NAME="v${VERSION_NAME}-vc${VERSION_CODE}-build${GITHUB_RUN_NUMBER}-${SHORT_SHA}"
           APK_SOURCE="app/build/outputs/apk/release/app-release.apk"
           APK_NAME="ImageReader-${TAG_NAME}.apk"
           cp "$APK_SOURCE" "$APK_NAME"
           echo "tag_name=$TAG_NAME" >> "$GITHUB_OUTPUT"
           echo "apk_name=$APK_NAME" >> "$GITHUB_OUTPUT"
+          echo "version_code=$VERSION_CODE" >> "$GITHUB_OUTPUT"
 
       - name: Publish public release
         env:
           GH_TOKEN: ${{ github.token }}
           TAG_NAME: ${{ steps.release_info.outputs.tag_name }}
           APK_NAME: ${{ steps.release_info.outputs.apk_name }}
+          VERSION_CODE: ${{ steps.release_info.outputs.version_code }}
         run: |
           if gh release view "$TAG_NAME" >/dev/null 2>&1; then
             gh release upload "$TAG_NAME" "$APK_NAME" --clobber
@@ -77,5 +81,5 @@ jobs:
             gh release create "$TAG_NAME" "$APK_NAME" \
               --target "$GITHUB_SHA" \
               --title "ImageReader $TAG_NAME" \
-              --notes "Automated release for commit $GITHUB_SHA."
+              --notes "Automated release for versionCode $VERSION_CODE, commit $GITHUB_SHA."
           fi

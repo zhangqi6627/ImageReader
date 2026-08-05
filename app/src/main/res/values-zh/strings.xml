@@ -18,4 +18,8 @@
     <string name="display_mode_label">显示</string>
     <string name="display_mode_list">列表</string>
     <string name="display_mode_grid">网格</string>
+    <string name="upgrade_title">发现新版本</string>
+    <string name="upgrade_message">当前版本号：%1$d\n最新版本号：%2$d\nGitHub Releases 上已有新的 APK。</string>
+    <string name="upgrade_now">立即升级</string>
+    <string name="upgrade_later">稍后再说</string>
 </resources>

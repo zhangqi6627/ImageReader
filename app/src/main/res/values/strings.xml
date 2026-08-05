@@ -18,4 +18,8 @@
     <string name="display_mode_label">View</string>
     <string name="display_mode_list">List</string>
     <string name="display_mode_grid">Grid</string>
+    <string name="upgrade_title">Update available</string>
+    <string name="upgrade_message">Current version code: %1$d\nLatest version code: %2$d\nA newer APK is available on GitHub Releases.</string>
+    <string name="upgrade_now">Update</string>
+    <string name="upgrade_later">Later</string>
 </resources>
