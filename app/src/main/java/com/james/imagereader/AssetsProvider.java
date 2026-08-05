@@ -7,7 +7,6 @@ import android.database.Cursor;
 import android.database.SQLException;
 import android.database.sqlite.SQLiteDatabase;
 import android.text.TextUtils;
-import android.util.Log;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -40,7 +39,7 @@ public class AssetsProvider {
             try {
                 return appInfo.packageName;
             } catch (Exception e) {
-                Log.e("zq8888", e.toString());
+                LogUtils.e("TAG", e.toString());
             }
         }
         return null;
@@ -135,7 +134,7 @@ public class AssetsProvider {
                     if (!new File(displayName).exists()) {
                         continue;
                     }
-                    Log.e("zq8888", Thread.currentThread().getStackTrace()[2].getClassName()+"-->"+Thread.currentThread().getStackTrace()[2].getMethodName()+"()-->"+Thread.currentThread().getStackTrace()[2].getLineNumber() + " displayName: " + displayName);
+                    LogUtils.e("zq8888", Thread.currentThread().getStackTrace()[2].getClassName()+"-->"+Thread.currentThread().getStackTrace()[2].getMethodName()+"()-->"+Thread.currentThread().getStackTrace()[2].getLineNumber() + " displayName: " + displayName);
                     long packageSize = mCursor.getLong(mCursor.getColumnIndexOrThrow(DatabaseHelper.COLUMN_PACKAGE_SIZE));
                     int progress = mCursor.getInt(mCursor.getColumnIndexOrThrow(DatabaseHelper.COLUMN_PROGRESS));
                     int offset = mCursor.getInt(mCursor.getColumnIndexOrThrow(DatabaseHelper.COLUMN_OFFSET));

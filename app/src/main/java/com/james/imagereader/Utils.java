@@ -3,7 +3,6 @@ package com.james.imagereader;
 import android.content.Context;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
-import android.util.Log;
 import android.view.Window;
 
 import java.io.BufferedInputStream;

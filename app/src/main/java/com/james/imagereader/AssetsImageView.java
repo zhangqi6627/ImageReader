@@ -5,7 +5,6 @@ import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.util.AttributeSet;
 import android.support.v7.widget.AppCompatImageView;
-import android.util.Log;
 import android.view.GestureDetector;
 import android.view.MotionEvent;
 
@@ -31,7 +30,7 @@ public class AssetsImageView extends AppCompatImageView {
         gestureDetector = new GestureDetector(new GestureDetector.SimpleOnGestureListener() {
             @Override
             public boolean onDoubleTap(@NonNull MotionEvent e) {
-                Log.e("zq8888", "onDoubleTap(1)");
+                LogUtils.e("zq8888", "onDoubleTap(1)");
                 if (mOnActionListener != null) {
                     return mOnActionListener.onDoubleClick(e);
                 }
@@ -40,7 +39,7 @@ public class AssetsImageView extends AppCompatImageView {
 
             @Override
             public boolean onSingleTapConfirmed(@NonNull MotionEvent e) {
-                Log.e("zq8888", "onSingleTapConfirmed(1)");
+                LogUtils.e("zq8888", "onSingleTapConfirmed(1)");
                 if (mOnActionListener != null) {
                     return mOnActionListener.onSingleClick(e);
                 }

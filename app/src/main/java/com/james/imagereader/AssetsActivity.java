@@ -6,7 +6,6 @@ import android.os.Message;
 import android.support.design.widget.TabLayout;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.view.ViewPager;
-import android.util.Log;
 
 import java.io.File;
 import java.util.HashMap;
