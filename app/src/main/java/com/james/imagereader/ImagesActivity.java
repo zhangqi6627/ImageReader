@@ -317,13 +317,11 @@ public class ImagesActivity extends BaseActivity {
 
                 @Override
                 public boolean onSwipeLeft() {
-                    Log.e("zq8888", "onSwipeLeft()");
                     return true;
                 }
 
                 @Override
                 public boolean onSwipeRight() {
-                    Log.e("zq8888", "onSwipeRight()");
                     return true;
                 }
             });
@@ -334,7 +332,6 @@ public class ImagesActivity extends BaseActivity {
     @Override
     protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
-        Log.e("zq8888", "onActivityResult(1)" + requestCode + " result:" + resultCode + " data:" + data);
         if (requestCode == 102) {
             if (!Utils.isAppInstalled(this, packageName)) {
                 showToast("卸载完成");
