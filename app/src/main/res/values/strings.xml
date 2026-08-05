@@ -22,4 +22,8 @@
     <string name="upgrade_message">Current version code: %1$d\nLatest version code: %2$d\nA newer APK is available on GitHub Releases.</string>
     <string name="upgrade_now">Update</string>
     <string name="upgrade_later">Later</string>
+    <string name="upgrade_downloading">Downloading update...</string>
+    <string name="upgrade_download_progress">Downloading: %1$d%%</string>
+    <string name="upgrade_download_done">Download complete. Opening installer...</string>
+    <string name="upgrade_download_failed">Download failed. Please try again.</string>
 </resources>

@@ -7,11 +7,17 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
+import android.support.v4.content.FileProvider;
 import android.text.TextUtils;
 import android.view.View;
 import android.view.animation.Animation;
 import android.view.animation.AnimationUtils;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
+import android.widget.ProgressBar;
+import android.widget.TextView;
+
+import java.io.File;
 
 public class SplashActivity extends Activity {
     private static final long AD_PLACEHOLDER_DURATION_MS = 1800L;
@@ -22,6 +28,10 @@ public class SplashActivity extends Activity {
     private boolean hasShownUpgradeDialog;
     private boolean hasUpgradeCheckFinished;
     private boolean isWaitingUpgradeCheck;
+    private boolean isDownloadingUpdate;
+    private AlertDialog upgradeDialog;
+    private ProgressBar upgradeProgressBar;
+    private TextView upgradeProgressText;
     private UpgradeChecker.ReleaseInfo pendingReleaseInfo;
     private View logoContainer;
     private View adContainer;
@@ -81,6 +91,9 @@ public class SplashActivity extends Activity {
         handler.removeCallbacks(showAdRunnable);
         handler.removeCallbacks(openHomeRunnable);
         handler.removeCallbacks(upgradeCheckTimeoutRunnable);
+        if (upgradeDialog != null && upgradeDialog.isShowing()) {
+            upgradeDialog.dismiss();
+        }
         super.onDestroy();
     }
 
@@ -133,16 +146,30 @@ public class SplashActivity extends Activity {
         if (!TextUtils.isEmpty(releaseInfo.releaseNotes)) {
             message = message + "\n\n" + releaseInfo.releaseNotes;
         }
-        new AlertDialog.Builder(this)
+        LinearLayout upgradeLayout = new LinearLayout(this);
+        upgradeLayout.setOrientation(LinearLayout.VERTICAL);
+        int padding = (int) (24 * getResources().getDisplayMetrics().density);
+        upgradeLayout.setPadding(padding, 0, padding, 0);
+
+        TextView messageView = new TextView(this);
+        messageView.setText(message);
+        upgradeLayout.addView(messageView);
+
+        upgradeProgressText = new TextView(this);
+        upgradeProgressText.setText(R.string.upgrade_downloading);
+        upgradeProgressText.setVisibility(View.GONE);
+        upgradeLayout.addView(upgradeProgressText);
+
+        upgradeProgressBar = new ProgressBar(this, null, android.R.attr.progressBarStyleHorizontal);
+        upgradeProgressBar.setMax(100);
+        upgradeProgressBar.setProgress(0);
+        upgradeProgressBar.setVisibility(View.GONE);
+        upgradeLayout.addView(upgradeProgressBar);
+
+        upgradeDialog = new AlertDialog.Builder(this)
                 .setTitle(getString(R.string.upgrade_title))
-                .setMessage(message)
-                .setPositiveButton(R.string.upgrade_now, new android.content.DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(android.content.DialogInterface dialog, int which) {
-                        startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(releaseInfo.downloadUrl)));
-                        openHome();
-                    }
-                })
+                .setView(upgradeLayout)
+                .setPositiveButton(R.string.upgrade_now, null)
                 .setNegativeButton(R.string.upgrade_later, new android.content.DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(android.content.DialogInterface dialog, int which) {
@@ -155,6 +182,61 @@ public class SplashActivity extends Activity {
                         openHome();
                     }
                 })
-                .show();
+                .create();
+        upgradeDialog.setOnShowListener(new android.content.DialogInterface.OnShowListener() {
+            @Override
+            public void onShow(android.content.DialogInterface dialog) {
+                upgradeDialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View view) {
+                        startApkDownload(releaseInfo);
+                    }
+                });
+            }
+        });
+        upgradeDialog.show();
+    }
+
+    private void startApkDownload(UpgradeChecker.ReleaseInfo releaseInfo) {
+        if (isDownloadingUpdate) {
+            return;
+        }
+        isDownloadingUpdate = true;
+        upgradeProgressText.setVisibility(View.VISIBLE);
+        upgradeProgressBar.setVisibility(View.VISIBLE);
+        upgradeDialog.getButton(AlertDialog.BUTTON_POSITIVE).setEnabled(false);
+        upgradeDialog.getButton(AlertDialog.BUTTON_NEGATIVE).setEnabled(false);
+        String apkName = "ImageReader-" + releaseInfo.tagName + ".apk";
+        new ApkUpdateDownloader().download(this, releaseInfo.downloadUrl, apkName, new ApkUpdateDownloader.Listener() {
+            @Override
+            public void onProgress(int progress) {
+                upgradeProgressBar.setProgress(progress);
+                upgradeProgressText.setText(getString(R.string.upgrade_download_progress, progress));
+            }
+
+            @Override
+            public void onSuccess(File apkFile) {
+                upgradeProgressText.setText(R.string.upgrade_download_done);
+                installApk(apkFile);
+                openHome();
+            }
+
+            @Override
+            public void onError(Exception exception) {
+                isDownloadingUpdate = false;
+                upgradeProgressText.setText(R.string.upgrade_download_failed);
+                upgradeDialog.getButton(AlertDialog.BUTTON_POSITIVE).setEnabled(true);
+                upgradeDialog.getButton(AlertDialog.BUTTON_NEGATIVE).setEnabled(true);
+            }
+        });
+    }
+
+    private void installApk(File apkFile) {
+        Uri apkUri = FileProvider.getUriForFile(this, getPackageName() + ".fileprovider", apkFile);
+        Intent intent = new Intent(Intent.ACTION_VIEW);
+        intent.setDataAndType(apkUri, "application/vnd.android.package-archive");
+        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+        startActivity(intent);
     }
 }

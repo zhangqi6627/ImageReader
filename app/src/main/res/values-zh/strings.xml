@@ -22,4 +22,8 @@
     <string name="upgrade_message">当前版本号：%1$d\n最新版本号：%2$d\nGitHub Releases 上已有新的 APK。</string>
     <string name="upgrade_now">立即升级</string>
     <string name="upgrade_later">稍后再说</string>
+    <string name="upgrade_downloading">正在下载更新...</string>
+    <string name="upgrade_download_progress">正在下载：%1$d%%</string>
+    <string name="upgrade_download_done">下载完成，正在打开安装器...</string>
+    <string name="upgrade_download_failed">下载失败，请重试。</string>
 </resources>
