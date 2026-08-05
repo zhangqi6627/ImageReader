@@ -2,4 +2,7 @@
     <string name="app_name">"ImageCool"</string>
     <string name="app_name_album">"Album"</string>
     <string name="scan_done">Scan asset packages finished.</string>
+    <string name="splash_ad_title">Ad Space</string>
+    <string name="splash_ad_message">No ad is available yet. Contact us on Telegram.</string>
+    <string name="splash_tg_contact">TG: @ImageCoolSupport</string>
 </resources>

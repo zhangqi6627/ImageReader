@@ -9,6 +9,7 @@ import android.view.GestureDetector;
 import android.view.MotionEvent;
 
 public class AssetsImageView extends AppCompatImageView {
+    private static final String TAG = "AssetsImageView";
     private GestureDetector gestureDetector;
     public AssetsImageView(Context context) {
         super(context);
@@ -30,7 +31,7 @@ public class AssetsImageView extends AppCompatImageView {
         gestureDetector = new GestureDetector(new GestureDetector.SimpleOnGestureListener() {
             @Override
             public boolean onDoubleTap(@NonNull MotionEvent e) {
-                LogUtils.e("zq8888", "onDoubleTap(1)");
+                LogUtils.e(TAG, "onDoubleTap(1)");
                 if (mOnActionListener != null) {
                     return mOnActionListener.onDoubleClick(e);
                 }
@@ -39,7 +40,7 @@ public class AssetsImageView extends AppCompatImageView {
 
             @Override
             public boolean onSingleTapConfirmed(@NonNull MotionEvent e) {
-                LogUtils.e("zq8888", "onSingleTapConfirmed(1)");
+                LogUtils.e(TAG, "onSingleTapConfirmed(1)");
                 if (mOnActionListener != null) {
                     return mOnActionListener.onSingleClick(e);
                 }

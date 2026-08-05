@@ -2,4 +2,7 @@
     <string name="app_name">"图酷"</string>
     <string name="app_name_album">"画廊"</string>
     <string name="scan_done">资源包扫描完成</string>
+    <string name="splash_ad_title">广告位</string>
+    <string name="splash_ad_message">目前暂无广告，可通过 TG 联系合作。</string>
+    <string name="splash_tg_contact">TG: @ImageCoolSupport</string>
 </resources>

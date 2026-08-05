@@ -134,7 +134,7 @@ public class AssetsProvider {
                     if (!new File(displayName).exists()) {
                         continue;
                     }
-                    LogUtils.e("zq8888", Thread.currentThread().getStackTrace()[2].getClassName()+"-->"+Thread.currentThread().getStackTrace()[2].getMethodName()+"()-->"+Thread.currentThread().getStackTrace()[2].getLineNumber() + " displayName: " + displayName);
+                    LogUtils.e(TAG, Thread.currentThread().getStackTrace()[2].getClassName()+"-->"+Thread.currentThread().getStackTrace()[2].getMethodName()+"()-->"+Thread.currentThread().getStackTrace()[2].getLineNumber() + " displayName: " + displayName);
                     long packageSize = mCursor.getLong(mCursor.getColumnIndexOrThrow(DatabaseHelper.COLUMN_PACKAGE_SIZE));
                     int progress = mCursor.getInt(mCursor.getColumnIndexOrThrow(DatabaseHelper.COLUMN_PROGRESS));
                     int offset = mCursor.getInt(mCursor.getColumnIndexOrThrow(DatabaseHelper.COLUMN_OFFSET));
