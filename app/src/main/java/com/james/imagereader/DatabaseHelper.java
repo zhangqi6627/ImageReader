@@ -36,6 +36,10 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         getWritableDatabase().update(DatabaseHelper.TABLE_NAME, assetInfo.getContentValues(), COLUMN_PACKAGE_NAME + "=?", new String[]{assetInfo.getPackageName()});
     }
 
+    public int deleteAssetInfo(String packageName) {
+        return getWritableDatabase().delete(TABLE_NAME, COLUMN_PACKAGE_NAME + "=?", new String[]{packageName});
+    }
+
     public AssetInfo getAssetInfo(String packageName) {
         AssetInfo assetInfo = new AssetInfo();
         Cursor cursor = getReadableDatabase().query(TABLE_NAME, COLUMNS, COLUMN_PACKAGE_NAME + "=?", new String[]{packageName}, null, null, null, null);

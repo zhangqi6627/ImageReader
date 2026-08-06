@@ -20,15 +20,15 @@ import java.util.List;
  *  #01.按包名分类
  *  #02.数据库
  *  #03.显示apk的体积大小
- *  04.网格布局，显示封面缩略图
+ *  #04.网格布局，显示封面缩略图
  *  #05.根据名称排序
  *  #06.如何去掉已经被卸载的apk?
  *  #07.自定义View显示进度条
  *  #08.添加Text功能
  *  09.添加 fress/reading/done 页面
  *  10.添加分享功能，生成海报
- *  11.添加开屏动画
- *  12.添加网络功能
+ *  #11.添加开屏动画
+ *  #12.添加网络功能
  *  13.添加 订阅/图源/书源 功能
  *  14.添加广告？寻找广告合作商
  *  15.添加视频播放功能
@@ -36,11 +36,11 @@ import java.util.List;
  *  #17.添加图片处理滤镜功能
  *  18.在保护页上添加 TG/FB/X/Tiktok 等链接
  *  19.添加积分功能
- *  20.添加OTA升级功能
+ *  #20.添加OTA升级功能
  *  #21.JobIntentService 执行完成之后通知RV刷新？Toast显示
  *  #22.插入数据库的时候用事务处理，会导致数据库查询卡住
  *  #23.TAB 下面显示每种类型的apk数量?
- *  24.图片显示还有问题，有些图片没有显示屏幕宽度
+ *  #24.图片显示还有问题，有些图片没有显示屏幕宽度
  *  #25.遍历扫描指定路径下的所有apk文件
  *  #26.判断是否能上google, 如果不能显示国外的广告就显示自己的广告
  */
@@ -178,6 +178,13 @@ public class AssetsActivity extends BaseActivity {
             return;
         }
         tabsAdapter.notifyDataSetChanged();
+    }
+
+    public void refreshTabs() {
+        if (tabsAdapter == null) {
+            return;
+        }
+        tabsAdapter.setTabs(AssetsProvider.getInstance(this).getTabTypes());
     }
 
     @Override

@@ -27,4 +27,10 @@
     <string name="upgrade_download_done">下载完成，正在打开安装器...</string>
     <string name="upgrade_download_failed">下载失败，请重试。</string>
     <string name="upgrade_install_permission_required">请允许本应用安装未知应用，然后返回继续安装。</string>
+    <string name="delete_apk_title">删除 APK？</string>
+    <string name="delete_apk_message">确定从本地删除 %1$s 吗？</string>
+    <string name="delete_apk_confirm">删除</string>
+    <string name="delete_apk_cancel">取消</string>
+    <string name="delete_apk_success">APK 已删除。</string>
+    <string name="delete_apk_failed">APK 删除失败。</string>
 </resources>

@@ -206,6 +206,21 @@ public class AssetsProvider {
         return "lastReadTime." + packageName;
     }
 
+    public synchronized boolean deleteAssetFileAndRecord(AssetInfo assetInfo) {
+        if (assetInfo == null || TextUtils.isEmpty(assetInfo.getDisplayName())) {
+            return false;
+        }
+        File apkFile = new File(assetInfo.getDisplayName());
+        boolean fileDeleted = !apkFile.exists() || (apkFile.isFile() && apkFile.delete());
+        if (!fileDeleted) {
+            return false;
+        }
+        mDatabaseHelper.deleteAssetInfo(assetInfo.getPackageName());
+        File[] apkFiles = mContext.getAssetsApkFiles();
+        mContext.saveData("fileCount", apkFiles == null ? 0 : apkFiles.length);
+        return true;
+    }
+
     public void deleteItemIfNotExist() {
         Cursor cursor = mDatabaseHelper.getReadableDatabase().query(DatabaseHelper.TABLE_NAME, new String[]{"packageName"}, null, null, null, null, null);
         if (cursor != null && cursor.moveToFirst()) {

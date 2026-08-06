@@ -27,4 +27,10 @@
     <string name="upgrade_download_done">Download complete. Opening installer...</string>
     <string name="upgrade_download_failed">Download failed. Please try again.</string>
     <string name="upgrade_install_permission_required">Please allow this app to install unknown apps, then return to continue installation.</string>
+    <string name="delete_apk_title">Delete APK?</string>
+    <string name="delete_apk_message">Delete %1$s from local storage?</string>
+    <string name="delete_apk_confirm">Delete</string>
+    <string name="delete_apk_cancel">Cancel</string>
+    <string name="delete_apk_success">APK deleted.</string>
+    <string name="delete_apk_failed">Failed to delete APK.</string>
 </resources>

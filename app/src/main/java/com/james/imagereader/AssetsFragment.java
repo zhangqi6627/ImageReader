@@ -3,6 +3,7 @@ package com.james.imagereader;
 
 import android.annotation.SuppressLint;
 import android.app.Activity;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
@@ -11,10 +12,12 @@ import android.os.SystemClock;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
+import android.support.v7.app.AlertDialog;
 import android.support.v7.widget.DividerItemDecoration;
 import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -182,22 +185,32 @@ public class AssetsFragment extends Fragment {
         @Override
         public void onBindViewHolder(@NonNull AlbumsHolder holder, int position) {
             AssetInfo assetInfo = assetInfos.get(position);
-            String packageName = assetInfo.getPackageName();
             String displayName = assetInfo.getDisplayName().replace(".apk", "");
             holder.tv_title.setText(new File(displayName).getName());
             holder.rootLayout.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
+                    int adapterPosition = holder.getAdapterPosition();
+                    if (adapterPosition == RecyclerView.NO_POSITION) {
+                        return;
+                    }
+                    AssetInfo currentAssetInfo = assetInfos.get(adapterPosition);
+                    String currentDisplayName = currentAssetInfo.getDisplayName().replace(".apk", "");
                     Intent mIntent = new Intent(mActivity, ImagesActivity.class);
-                    mIntent.putExtra("displayName", displayName);
-                    mIntent.putExtra("packageName", packageName);
-                    mIntent.putExtra("albumIndex", position);
+                    mIntent.putExtra("displayName", currentDisplayName);
+                    mIntent.putExtra("packageName", currentAssetInfo.getPackageName());
+                    mIntent.putExtra("albumIndex", adapterPosition);
                     startActivityForResult(mIntent, REQUEST_VIEW_IMAGE);
                 }
             });
             holder.rootLayout.setOnLongClickListener(new View.OnLongClickListener() {
                 @Override
                 public boolean onLongClick(View v) {
+                    int adapterPosition = holder.getAdapterPosition();
+                    if (adapterPosition == RecyclerView.NO_POSITION) {
+                        return true;
+                    }
+                    showDeleteApkDialog(assetInfos.get(adapterPosition), adapterPosition);
                     return true;
                 }
             });
@@ -225,6 +238,54 @@ public class AssetsFragment extends Fragment {
                 }
             });
             holder.cb_fav.setChecked(assetInfo.isFavorite());
+        }
+
+        private void showDeleteApkDialog(final AssetInfo assetInfo, final int position) {
+            String apkName = new File(assetInfo.getDisplayName()).getName();
+            new AlertDialog.Builder(mActivity)
+                    .setTitle(R.string.delete_apk_title)
+                    .setMessage(getString(R.string.delete_apk_message, apkName))
+                    .setNegativeButton(R.string.delete_apk_cancel, null)
+                    .setPositiveButton(R.string.delete_apk_confirm, new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+                            deleteApk(assetInfo, position);
+                        }
+                    })
+                    .show();
+        }
+
+        private void deleteApk(AssetInfo assetInfo, int position) {
+            boolean deleted = AssetsProvider.getInstance(mActivity).deleteAssetFileAndRecord(assetInfo);
+            if (!deleted) {
+                Toast.makeText(mActivity, R.string.delete_apk_failed, Toast.LENGTH_SHORT).show();
+                return;
+            }
+            int currentPosition = findAssetPosition(assetInfo, position);
+            if (currentPosition != RecyclerView.NO_POSITION) {
+                assetInfos.remove(currentPosition);
+                notifyItemRemoved(currentPosition);
+                notifyItemRangeChanged(currentPosition, assetInfos.size() - currentPosition);
+            } else {
+                notifyDataSetChanged();
+            }
+            if (mActivity instanceof AssetsActivity) {
+                ((AssetsActivity) mActivity).refreshTabs();
+            }
+            Toast.makeText(mActivity, R.string.delete_apk_success, Toast.LENGTH_SHORT).show();
+        }
+
+        private int findAssetPosition(AssetInfo assetInfo, int fallbackPosition) {
+            if (fallbackPosition >= 0 && fallbackPosition < assetInfos.size()
+                    && TextUtils.equals(assetInfo.getPackageName(), assetInfos.get(fallbackPosition).getPackageName())) {
+                return fallbackPosition;
+            }
+            for (int i = 0; i < assetInfos.size(); i++) {
+                if (TextUtils.equals(assetInfo.getPackageName(), assetInfos.get(i).getPackageName())) {
+                    return i;
+                }
+            }
+            return RecyclerView.NO_POSITION;
         }
 
         @Override
