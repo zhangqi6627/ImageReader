@@ -34,6 +34,9 @@
             android:name="com.james.imagereader.AssetsActivity"
             android:exported="true" />
         <activity
+            android:name="com.james.imagereader.SettingsActivity"
+            android:exported="false" />
+        <activity
             android:name="com.james.imagereader.ImagesActivity"
             android:excludeFromRecents="true"
             android:exported="true" >

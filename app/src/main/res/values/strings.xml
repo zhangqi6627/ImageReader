@@ -33,4 +33,16 @@
     <string name="delete_apk_cancel">Cancel</string>
     <string name="delete_apk_success">APK deleted.</string>
     <string name="delete_apk_failed">Failed to delete APK.</string>
+    <string name="settings_title">Settings</string>
+    <string name="settings_version_label">Version</string>
+    <string name="settings_version_value">%1$s (%2$d)</string>
+    <string name="settings_contacts_title">Contacts</string>
+    <string name="settings_telegram_label">Telegram</string>
+    <string name="settings_telegram_value">@ImageCoolSupport</string>
+    <string name="settings_gmail_label">Gmail</string>
+    <string name="settings_gmail_value">imagecool.reader@gmail.com</string>
+    <string name="settings_github_label">GitHub</string>
+    <string name="settings_github_value">github.com/zhangqi6627/ImageReader</string>
+    <string name="settings_back">Back</string>
+    <string name="settings_open_failed">No app can open this contact.</string>
 </resources>

@@ -1,6 +1,7 @@
 package com.james.imagereader;
 
 import android.Manifest;
+import android.content.Intent;
 import android.os.Bundle;
 import android.os.Message;
 import android.support.design.widget.TabLayout;
@@ -53,6 +54,7 @@ public class AssetsActivity extends BaseActivity {
     private SortSpinner spinnerSort;
     private ArrayAdapter<String> sortAdapter;
     private ImageButton btnDisplayMode;
+    private ImageButton btnSettings;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -73,6 +75,7 @@ public class AssetsActivity extends BaseActivity {
         viewPager.setAdapter(tabsAdapter);
         initSortSpinner();
         initDisplayModeButton();
+        initSettingsButton();
         tabLayout.setupWithViewPager(viewPager);
         tabLayout.setOnTabSelectedListener(new TabLayout.OnTabSelectedListener() {
             @Override
@@ -164,6 +167,16 @@ public class AssetsActivity extends BaseActivity {
         btnDisplayMode.setContentDescription(getString(isListMode
                 ? R.string.display_mode_list
                 : R.string.display_mode_grid));
+    }
+
+    private void initSettingsButton() {
+        btnSettings = (ImageButton) findViewById(R.id.btn_settings);
+        btnSettings.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                startActivity(new Intent(AssetsActivity.this, SettingsActivity.class));
+            }
+        });
     }
 
     private void refreshFragmentsByDisplayMode() {
